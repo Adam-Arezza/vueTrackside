@@ -60,6 +60,11 @@ app.on('ready', async () => {
   createWindow()
 })
 
+app.on('browser-window-created', function(e, window){
+  // window.setMenu(null)
+
+})
+
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {
