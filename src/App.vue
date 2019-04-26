@@ -5,8 +5,9 @@
         <b-dropdown id="file-dropdown" text="File" class="sm">
           <b-dropdown-item @click="importCsv()" class="sm">Import</b-dropdown-item>
           <b-dropdown-item>Export</b-dropdown-item>
-          <b-dropdown-item>Save</b-dropdown-item>
-          <b-dropdown-item>Close</b-dropdown-item>
+          <b-dropdown-item @click="saveToLocal()">Save</b-dropdown-item>
+          <b-dropdown-item @click="loadFromLocal()">Load</b-dropdown-item>
+          <b-dropdown-item @click="shutDown()">Close</b-dropdown-item>
         </b-dropdown>
         <b-button v-bind:class="{disabled: disabledLink}">
           <router-link to="/">Main</router-link>
@@ -25,6 +26,7 @@
 <script>
 import fs from "fs";
 const { dialog } = require("electron").remote;
+const remote = require("electron").remote
 
 function csvJson(csv) {
   var competitors = [];
@@ -71,6 +73,30 @@ export default {
           alert("filetype incorrect, please select a CSV file");
         }
       });
+    },
+    saveToLocal() {
+      var competitors = this.$store.state.competitors
+      if(localStorage.getItem('competitorData')){
+        alert("overwriting previous saved data!")
+        localStorage.removeItem('competitorData')
+        localStorage.setItem('competitorData', JSON.stringify({'date': new Date(), 'competitors':competitors}))
+      }
+      else{
+        localStorage.setItem('competitorData', JSON.stringify({'date': new Date(), 'competitors':competitors}))
+      }
+    },
+    loadFromLocal() {
+      if(localStorage.getItem('competitorData')){
+        var competitorData = JSON.parse((localStorage.getItem('competitorData')))
+        var competitors = competitorData.competitors
+        console.log(competitorData.competitors)
+        this.$store.commit('importList', competitors)
+        console.log(this.$store.state.competitors)
+      }
+    },
+    shutDown() {
+      var w = remote.getCurrentWindow()
+      w.close()
     }
   },
   computed: {
@@ -100,13 +126,13 @@ export default {
 }
 
 #nav a {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: white;
-  padding: 10px;
+  padding: 5px;
 }
 #nav button {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: white;
   padding: 10px;
@@ -121,8 +147,12 @@ export default {
   color:black;
 }
 
+#nav .dropdown-item:hover {
+  background: #2ca4c2;
+}
+
 #nav a.router-link-exact-active {
-  color: #42b983;
+  color: #2ca4c2;
 }
 .disabled {
   pointer-events: none;

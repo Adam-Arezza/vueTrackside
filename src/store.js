@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { Stats } from 'fs';
 
 Vue.use(Vuex)
 
@@ -9,7 +8,8 @@ export default new Vuex.Store({
     competitors: [],
     connection: {},
     liveRun:[],
-    staged: []
+    staged: [],
+    runCount: 1
   },
   mutations: {
     importList(state, list){
@@ -26,6 +26,10 @@ export default new Vuex.Store({
     },
     removeFromStaged(state){
       state.staged.pop()
+    },
+    newRun(state){
+      state.liveRun = []
+      state.runCount++
     }
   },
   actions: {

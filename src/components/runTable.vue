@@ -14,14 +14,13 @@
     <div v-if="connectionStatus">
       <p>Connected to Arduino on port: {{selectedPort}}</p>
     </div>
+    <p class="warning" v-if="message">{{message}}</p>
     <button @click="stageDriver()">Stage</button>
     <button @click="gateTriggered(0)">Start</button>
     <button @click="gateTriggered(1)">G1</button>
     <button @click="gateTriggered(2)">G2</button>
     <button @click="gateTriggered(3)">End</button>
-    <p>{{selectedDriver}}</p>
-    <p>{{selected}}</p>
-    <p> Penalty count: {{penalty}}</p>
+    <button @click="newRun()">Run Complete</button>
     <div>
       <button v-b-modal.penalty>Penalties</button>
       <b-modal id="penalty">
@@ -29,6 +28,8 @@
         <button @click="subtractCone">-</button>
       </b-modal>
     </div>
+    <h3>Run{{runCount}}</h3>
+
     <div class="row no-gutters">
       <b-table selectable :select-mode="single" striped :fields="fields" :items="liveRun" @row-selected="rowSelected"></b-table>
     </div>
@@ -42,7 +43,8 @@ import { setInterval, clearInterval } from "timers";
 export default {
   props: {
     liveRun: Array,
-    selectedDriver: ""
+    selectedDriver: "",
+    allDoneRun: false
   },
   data() {
     return {
@@ -59,11 +61,11 @@ export default {
         2: [],
         3: []
       },
-      runCount: 1,
       penalty: 0,
       single: "single",
       selected: [],
-      previous: []
+      previous: [],
+      message: ''
     };
   },
   methods: {
@@ -88,17 +90,26 @@ export default {
       this.connectionStatus = !this.connectionStatus;
     },
     stageDriver() {
-      this.competitors.forEach(competitor => {
+      if(this.selectedDriver){
+        this.competitors.forEach(competitor => {
         var driverSpecs = this.selectedDriver.split(":");
         driverSpecs = driverSpecs[1].split(" ");
         var carNum = driverSpecs[1];
         if (competitor.Car == carNum) {
-          console.log(competitor);
+          // console.log(competitor);
           this.$store.commit("stageNew", competitor);
-          console.log(this.$store.state.staged);
+          // console.log(this.$store.state.staged);
+          if(this.message){
+            this.message = ''
+          }
           return this.gates[0].push(competitor);
         }
       });
+      }
+      else{
+        return this.message = 'First, select the driver to stage.'
+      }
+      
     },
     gateTriggered(gate) {
       var driversAtGate = this.gates[gate];
@@ -128,7 +139,6 @@ export default {
           Final: 0
         };
       }
-
       driver.rawTimes.push(Date.now());
 
       var nextGate = gate + 1;
@@ -139,6 +149,7 @@ export default {
         this.runTable(driver);
         this.$store.commit("removeFromStaged");
         console.log(this.$store.state.staged);
+        console.log(this.$store.state.liveRun)
         return;
       }
       this.gates[nextGate].push(driver);
@@ -167,6 +178,8 @@ export default {
         if (sector > 3) {
           driver.Runs["run" + this.runCount]["Final"] = time;
         }
+        driver.rawTimes = []
+        driver.times = []
       });
       // console.log(driver.times);
     },
@@ -180,6 +193,8 @@ export default {
         Sector3: driver.Runs["run" + this.runCount]["Sector3"],
         Final: driver.Runs["run" + this.runCount]["Final"]
       };
+      // console.log("runtable(driver)")
+      console.log("The competitors after each run: ",this.$store.state.competitors)
       this.$store.commit("updateRun", run);
     },
     connect(port) {
@@ -241,6 +256,14 @@ export default {
       if (this.connectionStatus) {
         window.clearInterval(this.timer);
       }
+    },
+    newRun() {
+      if(this.allDoneRun){
+        this.$store.commit("newRun")
+      }
+      else{
+        return console.log("Not all drivers have completed this run"), alert("Not all drivers have completed this run")
+      }
     }
   },
   created: function() {
@@ -249,6 +272,9 @@ export default {
   computed: {
     competitors() {
       return this.$store.state.competitors;
+    },
+    runCount() {
+      return this.$store.state.runCount
     }
   }
 };
@@ -263,5 +289,13 @@ export default {
 }
 p {
   text-align: left;
+}
+.warning {
+  background: yellow;
+  color: black;
+  font-size: 1.2em;
+  padding: 5px;
+  width: 50%;
+  border-radius: 5px;
 }
 </style>
