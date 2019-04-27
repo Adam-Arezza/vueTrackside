@@ -22,8 +22,8 @@
     <button @click="gateTriggered(3)">End</button>
     <button @click="newRun()">Run Complete</button>
     <div>
-      <button v-b-modal.penalty>Penalties</button>
-      <b-modal id="penalty">
+      <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
+      <b-modal ref="penaltyModal"id="penalty">
         <button @click="addCone">+</button>
         <button @click="subtractCone">-</button>
       </b-modal>
@@ -31,7 +31,7 @@
     <h3>Run{{runCount}}</h3>
 
     <div class="row no-gutters">
-      <b-table selectable :select-mode="single" striped :fields="fields" :items="liveRun" @row-selected="rowSelected"></b-table>
+      <b-table selectable hover :select-mode="single" striped :fields="fields" :items="liveRun" @row-selected="rowSelected"></b-table>
     </div>
   </div>
 </template>
@@ -70,12 +70,15 @@ export default {
   },
   methods: {
     rowSelected(items){
+      if(items.length > 0){
+        this.$refs['penaltyModal'].show()
       this.selected = items
       if(items[0].Penalty){
         return this.penalty = items[0].Penalty
       }
       if(!items[0].Penalty){
         return this.penalty = 0
+      }
       }
     },
     addCone() {

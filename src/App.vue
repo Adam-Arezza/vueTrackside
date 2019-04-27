@@ -18,6 +18,9 @@
         <b-button v-bind:class="{disabled: disabledLink}">
           <router-link to="/gates">Gates</router-link>
         </b-button>
+        <b-button v-bind:class="{disabled: disabledLink}">
+          <router-link to="/reports">Reports</router-link>
+        </b-button>
       </b-button-group>
     </div>
     <router-view/>
@@ -126,16 +129,16 @@ export default {
 }
 
 #nav a {
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: bold;
   color: white;
-  padding: 5px;
+  padding: 20px;
 }
 #nav button {
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: bold;
   color: white;
-  padding: 10px;
+  height: 50px;
   background: black;
 }
 
