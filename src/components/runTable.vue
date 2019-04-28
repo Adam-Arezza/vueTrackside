@@ -24,8 +24,9 @@
     <div>
       <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
       <b-modal ref="penaltyModal"id="penalty">
-        <button @click="addCone">+</button>
-        <button @click="subtractCone">-</button>
+        <button @click="addCone">Add 1 Cone Penalty</button>
+        <button @click="subtractCone">Remove 1 Cone Penalty</button>
+        <button @click="dnf">DNF</button>
       </b-modal>
     </div>
     <h3>Run{{runCount}}</h3>
@@ -84,13 +85,38 @@ export default {
     addCone() {
       this.penalty++;
       this.selected[0].Penalty = this.penalty
+      this.handlePenalties()
     },
     subtractCone() {
       this.penalty--
       this.selected[0].Penalty = this.penalty
+      this.handlePenalties()
     },
     mockConnect() {
       this.connectionStatus = !this.connectionStatus;
+    },
+    dnf() {
+      var currentRuns = this.$store.state.liveRun
+      this.competitors.forEach(competitor => {
+        if(competitor.Name == this.selected[0].Name){
+          competitor.Runs["run" + this.$store.state.runCount].Final = "DNF"
+        }
+        currentRuns.forEach(run => {
+          if(run.Car == competitor.Car && run.Car == this.selected[0].Car){
+            run.Final = "DNF"
+          }
+        })
+      })
+    },
+    handlePenalties() {
+      if(this.selected[0].Penalty > 0){
+        this.competitors.forEach(competitor => {
+          if(this.selected[0].Car == competitor.Car) {
+            competitor.Runs["run" + this.$store.state.runCount].Penalty = this.selected[0].Penalty
+          }
+        })
+      }
+      console.log("After penalties: ", this.competitors)
     },
     stageDriver() {
       if(this.selectedDriver){
@@ -110,7 +136,7 @@ export default {
       });
       }
       else{
-        return this.message = 'First, select the driver to stage.'
+        return alert('First, select the driver to stage.')
       }
       
     },
@@ -146,13 +172,13 @@ export default {
 
       var nextGate = gate + 1;
       if (!this.gates[nextGate]) {
-        console.log("End of run", driver.Name);
+        // console.log("End of run", driver.Name);
         // calculate sector times & run times
         this.getSectorTimes(driver);
         this.runTable(driver);
         this.$store.commit("removeFromStaged");
-        console.log(this.$store.state.staged);
-        console.log(this.$store.state.liveRun)
+        // console.log(this.$store.state.staged);
+        // console.log(this.$store.state.liveRun)
         return;
       }
       this.gates[nextGate].push(driver);
@@ -197,7 +223,7 @@ export default {
         Final: driver.Runs["run" + this.runCount]["Final"]
       };
       // console.log("runtable(driver)")
-      console.log("The competitors after each run: ",this.$store.state.competitors)
+      console.log("The competitors after the run: ",this.$store.state.competitors)
       this.$store.commit("updateRun", run);
     },
     connect(port) {

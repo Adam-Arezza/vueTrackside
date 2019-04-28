@@ -8,14 +8,24 @@
     <b-collapse id="class">
       <div v-for="(carClass, index) in classes" :key="index">
         <h4>Class {{carClass}}</h4>
-        <b-table :items="getClassFtd[index]" :fields="classFields" :sort-by="ftdSort" :sort-desc="false"></b-table>
+        <b-table
+          :items="getClassFtd[index]"
+          :fields="classFields"
+          :sort-by="ftdSort"
+          :sort-desc="false"
+        ></b-table>
       </div>
     </b-collapse>
     <b-button class="collapseBtn" v-b-toggle.sector>Sector Ftd</b-button>
     <b-collapse id="sector">
       <div v-for="(sector, index) in sectors" :key="index">
         <h4>Sector {{sector}}</h4>
-        <b-table :items="getSectorFtd[index]" :fields="sectorFields" :sort-by="ftdSort" :sort-desc="false"></b-table>
+        <b-table
+          :items="getSectorFtd[index]"
+          :fields="sectorFields"
+          :sort-by="ftdSort"
+          :sort-desc="false"
+        ></b-table>
       </div>
     </b-collapse>
   </div>
@@ -49,83 +59,104 @@ export default {
       var result = [];
       this.competitors.forEach(competitor => {
         var runTimes = [];
+        var fastestTime;
+        var fastestRun;
         if (competitor.Runs) {
           Object.keys(competitor.Runs).forEach(run => {
             runTimes.push(competitor.Runs[run].Final);
           });
         }
-        if (runTimes.length > 0) {
-          var fastestTime = Math.min(...runTimes);
-          var fastestRun
+        console.log("runtimes: ", runTimes);
+        if (runTimes.length == 1 && typeof runTimes[0] != "number") {
+          return console.log("the only run was a dnf");
+        }
+        if (runTimes.length >= 1) {
+          while (runTimes.includes("dnf")) {
+            runTimes = runTimes.sort();
+            runTimes.pop();
+          }
+          fastestTime = Math.min(...runTimes);
           Object.keys(competitor.Runs).forEach(run => {
-            if(competitor.Runs[run].Final == fastestTime){
-              fastestRun = run
+            if (competitor.Runs[run].Final == fastestTime) {
+              console.log("a run: ", run);
+              fastestRun = run;
             }
-          })
-          // console.log("The fastest run: ",fastestRun)
+          });
+          // console.log("The fastest run: ", fastestRun);
+          // console.log("The fastest time: ", fastestTime)
           result.push({
             driver: competitor.Name,
             class: competitor.Class,
-            run: fastestRun[3],
+            run: fastestRun,
             Ftd: fastestTime
           });
+          console.log("results: ", result);
         }
       });
       // console.log("GetoverallTimes result: ", result)
       return result;
     },
     getClassFtd() {
-      var result = []
-      var classA = []
-      var classB = []
-      var classC = []
-      var classD = []
+      var result = [];
+      var classA = [];
+      var classB = [];
+      var classC = [];
+      var classD = [];
       this.GetOverallFtd.forEach(competitor => {
-        switch (competitor.class){
+        switch (competitor.class) {
           case "A":
-          classA.push(competitor)
-          break
+            classA.push(competitor);
+            break;
           case "B":
-          classB.push(competitor)
-          break
+            classB.push(competitor);
+            break;
           case "C":
-          classC.push(competitor)
-          break
+            classC.push(competitor);
+            break;
           case "D":
-          classD.push(competitor)
-          break
+            classD.push(competitor);
+            break;
         }
-      })
-    result.push(classA,classB,classC,classD)
-    console.log(result)
-    return result
+      });
+      result.push(classA, classB, classC, classD);
+      console.log(result);
+      return result;
     },
     getSectorFtd() {
-      var result = []
-      var sector1Fastest = []
-      var sector2Fastest = []
-      var sector3Fastest = []
+      var result = [];
+      var sector1Fastest = [];
+      var sector2Fastest = [];
+      var sector3Fastest = [];
       this.competitors.forEach(competitor => {
-        var sector1 = []
-        var sector2 = []
-        var sector3 = []
-        if(competitor.Runs){
+        var sector1 = [];
+        var sector2 = [];
+        var sector3 = [];
+        if (competitor.Runs) {
           Object.keys(competitor.Runs).forEach(run => {
-            var sectors = Object.keys(competitor.Runs[run])
-            sector1.push(competitor.Runs[run][sectors[0]])
-            sector2.push(competitor.Runs[run][sectors[1]])
-            sector3.push(competitor.Runs[run][sectors[2]])
-          })
+            var sectors = Object.keys(competitor.Runs[run]);
+            sector1.push(competitor.Runs[run][sectors[0]]);
+            sector2.push(competitor.Runs[run][sectors[1]]);
+            sector3.push(competitor.Runs[run][sectors[2]]);
+          });
+          var fastestS1 = Math.min(...sector1);
+          var fastestS2 = Math.min(...sector2);
+          var fastest3 = Math.min(...sector3);
+          // if(fastestS1 == "infinity"){
+          //   fastestS1 = "---"
+          // }
+          // if(fastestS2 == "infinity"){
+          //   fastestS2 = "---"
+          // }
+          // if(fastest3 == "infinity"){
+          //   fastest3 = "---"
+          // }
+          sector1Fastest.push({ driver: competitor.Name, Ftd: fastestS1 });
+          sector2Fastest.push({ driver: competitor.Name, Ftd: fastestS2 });
+          sector3Fastest.push({ driver: competitor.Name, Ftd: fastest3 });
         }
-        var fastestS1 = Math.min(...sector1)
-        var fastestS2 = Math.min(...sector2)
-        var fastest3 = Math.min(...sector3)
-        sector1Fastest.push({driver:competitor.Name, Ftd:fastestS1})
-        sector2Fastest.push({driver:competitor.Name, Ftd:fastestS2})
-        sector3Fastest.push({driver:competitor.Name, Ftd: fastest3})
-      })
-      result.push(sector1Fastest, sector2Fastest, sector3Fastest)
-      return result
+      });
+      result.push(sector1Fastest, sector2Fastest, sector3Fastest);
+      return result;
     }
   }
 };
