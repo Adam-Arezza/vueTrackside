@@ -1,0 +1,4 @@
+In runtable, penalty only show up after the row is unselected
+
+In runtable, if multiple Arduino are connected to the laptop, possible to connect to wrong Arduino
+

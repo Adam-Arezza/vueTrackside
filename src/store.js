@@ -9,14 +9,16 @@ export default new Vuex.Store({
     connection: {},
     liveRun:[],
     staged: [],
+    gates: {},
     runCount: 1
   },
   mutations: {
     importList(state, list){
       state.competitors = list
     },
-    newConnect(state,device,port){
-      state.connection = {"device": device, "port": port}
+    newConnect(state,device){
+      state.connection = {"device": device[0], "port": device[1]}
+      console.log(state.connection)
     },
     updateRun(state, run){
       state.liveRun.push(run)
@@ -30,6 +32,13 @@ export default new Vuex.Store({
     newRun(state){
       state.liveRun = []
       state.runCount++
+    },
+    setGates(state, num) {
+      state.gates = num
+      console.log("gates at the store: ", state.gates)
+    },
+    disconnect(state) {
+      state.connection = {}
     }
   },
   actions: {

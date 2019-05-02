@@ -1,20 +1,25 @@
 <template>
   <div class="runTable">
-    <div v-if="!availablePorts && connectionStatus == false">
+    <!-- <p>{{getArduino.port}}</p> -->
+    <div id="searching" v-if="!availablePorts && getArduino.device == undefined">
       <p>Searching for Arduino {{dots}}</p>
     </div>
-    <div v-if="availablePorts && connectionStatus == false">
+    <div v-if="availablePorts && getArduino.device == undefined">
       <div id="arduinoConnector">
+        <p v-if="message" id="warning">{{message}}</p>
         <p>
+          Arduino on port:
           {{availablePorts.comName}}
-          <button @click="connect(availablePorts.comName)">Connect</button>
+          <button
+            id="connectBtn"
+            @click="connect(availablePorts.comName)"
+          >Connect</button>
         </p>
       </div>
     </div>
-    <div v-if="connectionStatus">
-      <p>Connected to Arduino on port: {{selectedPort}}</p>
+    <div id="connectionMsg" v-if="getArduino.device != undefined">
+      <p>Connected to Arduino on port: {{getArduino.port}}</p>
     </div>
-    <p class="warning" v-if="message">{{message}}</p>
     <button @click="stageDriver()">Stage</button>
     <button @click="gateTriggered(0)">Start</button>
     <button @click="gateTriggered(1)">G1</button>
@@ -23,16 +28,24 @@
     <button @click="newRun()">Run Complete</button>
     <div>
       <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
-      <b-modal ref="penaltyModal"id="penalty">
-        <button @click="addCone">Add 1 Cone Penalty</button>
-        <button @click="subtractCone">Remove 1 Cone Penalty</button>
+      <b-modal ref="penaltyModal" id="penalty">
+        <button @click="handlePenalties('add')">Add 1 Cone Penalty</button>
+        <button @click="handlePenalties('sub')">Remove 1 Cone Penalty</button>
         <button @click="dnf">DNF</button>
       </b-modal>
     </div>
     <h3>Run{{runCount}}</h3>
 
     <div class="row no-gutters">
-      <b-table selectable hover :select-mode="single" striped :fields="fields" :items="liveRun" @row-selected="rowSelected"></b-table>
+      <b-table
+        selectable
+        hover
+        :select-mode="single"
+        striped
+        :fields="fields"
+        :items="liveRun"
+        @row-selected="rowSelected"
+      ></b-table>
     </div>
   </div>
 </template>
@@ -49,99 +62,124 @@ export default {
   },
   data() {
     return {
-      fields: ["Car", "Name", "Make", "Sector1", "Sector2", "Sector3", "Final", "Penalty"],
+      fields: [
+        "Car",
+        "Name",
+        "Make",
+        "Sector1",
+        "Sector2",
+        "Sector3",
+        "Final",
+        "Penalty"
+      ],
       availablePorts: undefined,
       selectedPort: "",
       connectionStatus: false,
-      arduino: {},
       timer: "",
       dots: ".",
-      gates: {
-        0: [],
-        1: [],
-        2: [],
-        3: []
-      },
       penalty: 0,
       single: "single",
       selected: [],
       previous: [],
-      message: ''
+      message: ""
     };
   },
   methods: {
-    rowSelected(items){
-      if(items.length > 0){
-        this.$refs['penaltyModal'].show()
-      this.selected = items
-      if(items[0].Penalty){
-        return this.penalty = items[0].Penalty
-      }
-      if(!items[0].Penalty){
-        return this.penalty = 0
-      }
+    //opens the penalties modal on row selection
+    rowSelected(items) {
+      if (items.length > 0) {
+        this.$refs["penaltyModal"].show();
+        this.selected = items;
+        if (items[0].Penalty) {
+          return (this.penalty = items[0].Penalty);
+        }
+        if (!items[0].Penalty) {
+          return (this.penalty = 0);
+        }
       }
     },
+    //adds a cone penalty
     addCone() {
       this.penalty++;
-      this.selected[0].Penalty = this.penalty
-      this.handlePenalties()
+      this.selected[0].Penalty = this.penalty;
     },
+    //subtracts a cone penalty
     subtractCone() {
-      this.penalty--
-      this.selected[0].Penalty = this.penalty
-      this.handlePenalties()
+      this.penalty--;
+      this.selected[0].Penalty = this.penalty;
     },
-    mockConnect() {
-      this.connectionStatus = !this.connectionStatus;
-    },
+    //give the selected driver a DNF for the current run
     dnf() {
-      var currentRuns = this.$store.state.liveRun
+      var currentRuns = this.$store.state.liveRun;
       this.competitors.forEach(competitor => {
-        if(competitor.Name == this.selected[0].Name){
-          competitor.Runs["run" + this.$store.state.runCount].Final = "DNF"
+        if (competitor.Name == this.selected[0].Name) {
+          competitor.Runs[this.runCount - 1].Final = "DNF";
         }
         currentRuns.forEach(run => {
-          if(run.Car == competitor.Car && run.Car == this.selected[0].Car){
-            run.Final = "DNF"
+          if (run.Car == competitor.Car && run.Car == this.selected[0].Car) {
+            run.Final = "DNF";
           }
-        })
-      })
-    },
-    handlePenalties() {
-      if(this.selected[0].Penalty > 0){
-        this.competitors.forEach(competitor => {
-          if(this.selected[0].Car == competitor.Car) {
-            competitor.Runs["run" + this.$store.state.runCount].Penalty = this.selected[0].Penalty
-          }
-        })
-      }
-      console.log("After penalties: ", this.competitors)
-    },
-    stageDriver() {
-      if(this.selectedDriver){
-        this.competitors.forEach(competitor => {
-        var driverSpecs = this.selectedDriver.split(":");
-        driverSpecs = driverSpecs[1].split(" ");
-        var carNum = driverSpecs[1];
-        if (competitor.Car == carNum) {
-          // console.log(competitor);
-          this.$store.commit("stageNew", competitor);
-          // console.log(this.$store.state.staged);
-          if(this.message){
-            this.message = ''
-          }
-          return this.gates[0].push(competitor);
-        }
+        });
       });
-      }
-      else{
-        return alert('First, select the driver to stage.')
-      }
-      
     },
+    //handles penalty calculation and updates the store for a competitor
+    handlePenalties(operation) {
+      if (operation == "add") {
+        this.addCone();
+        this.competitors.forEach(competitor => {
+          if (this.selected[0].Car == competitor.Car) {
+            competitor.Runs[
+              this.runCount - 1
+            ].Penalty = this.selected[0].Penalty;
+            competitor.Runs[this.runCount - 1].Final =
+              competitor.Runs[this.runCount - 1].Final + 2;
+          }
+        });
+      }
+      if (operation == "sub") {
+        this.subtractCone();
+        this.competitors.forEach(competitor => {
+          if (this.selected[0].Car == competitor.Car) {
+            competitor.Runs[
+              this.runCount - 1
+            ].Penalty = this.selected[0].Penalty;
+            competitor.Runs[this.runCount - 1].Final = (
+              competitor.Runs[this.runCount - 1].Final - 2
+            ).toFixed(3);
+          }
+        });
+      }
+      console.log("After penalties: ", this.competitors);
+    },
+    //adds a competitor to the staged list in the store
+    //competitor at starting line
+    stageDriver() {
+      if (Object.keys(this.getGates).length == 0) {
+        return alert("Must set number of gates before staging");
+      }
+      if (this.selectedDriver) {
+        this.competitors.forEach(competitor => {
+          var driverSpecs = this.selectedDriver.split(":");
+          driverSpecs = driverSpecs[1].split(" ");
+          var carNum = driverSpecs[1];
+          if (competitor.Car == carNum) {
+            // console.log(competitor);
+            this.$store.commit("stageNew", competitor);
+            // console.log(this.$store.state.staged);
+            // if (this.message) {
+            //   this.message = "";
+            // }
+            return this.getGates[0].push(competitor);
+          }
+        });
+      } else {
+        return alert("First, select the driver to stage.");
+      }
+    },
+    //handles signals from the arduino gates as driver navigates through the course
+    //stores values for runtime calculations
     gateTriggered(gate) {
-      var driversAtGate = this.gates[gate];
+      var driversAtGate = this.getGates[gate];
       // console.log("Current Driver", JSON.stringify(driversAtGate));
       if (driversAtGate == undefined || !driversAtGate) {
         return;
@@ -158,20 +196,13 @@ export default {
         driver.times = [];
       }
       if (!driver.Runs) {
-        driver.Runs = {};
+        driver.Runs = [];
       }
-      if (driver.Runs) {
-        driver.Runs["run" + this.runCount] = {
-          Sector1: 0,
-          Sector2: 0,
-          Sector3: 0,
-          Final: 0
-        };
-      }
+
       driver.rawTimes.push(Date.now());
 
       var nextGate = gate + 1;
-      if (!this.gates[nextGate]) {
+      if (!this.getGates[nextGate]) {
         // console.log("End of run", driver.Name);
         // calculate sector times & run times
         this.getSectorTimes(driver);
@@ -181,9 +212,19 @@ export default {
         // console.log(this.$store.state.liveRun)
         return;
       }
-      this.gates[nextGate].push(driver);
+      this.getGates[nextGate].push(driver);
     },
+    //calculates the drivers sector times
     getSectorTimes(driver) {
+      if (driver.Runs) {
+        driver.Runs.push({
+          Sector1: 0,
+          Sector2: 0,
+          Sector3: 0,
+          Final: 0,
+          Penalty: 0
+        });
+      }
       var rawSectors = driver.rawTimes;
       var i = 0;
       var sector = 1;
@@ -201,67 +242,103 @@ export default {
         // console.log(driver);
         // console.log(driver.Runs["run" + this.runCount]);
         if (sector <= 3) {
-          driver.Runs["run" + this.runCount]["Sector" + sector] = time;
+          driver.Runs[this.runCount - 1]["Sector" + sector] = time;
           sector++;
         }
         if (sector > 3) {
-          driver.Runs["run" + this.runCount]["Final"] = time;
+          driver.Runs[this.runCount - 1]["Final"] = time;
         }
-        driver.rawTimes = []
-        driver.times = []
+        driver.rawTimes = [];
+        driver.times = [];
       });
       // console.log(driver.times);
     },
+    //updates the liverun state in the store
+    //updates the live runtable values
     runTable(driver) {
       var run = {
         Car: driver.Car,
         Name: driver.Name,
         Make: driver.Make,
-        Sector1: driver.Runs["run" + this.runCount]["Sector1"],
-        Sector2: driver.Runs["run" + this.runCount]["Sector2"],
-        Sector3: driver.Runs["run" + this.runCount]["Sector3"],
-        Final: driver.Runs["run" + this.runCount]["Final"]
+        Sector1: driver.Runs[this.runCount - 1]["Sector1"],
+        Sector2: driver.Runs[this.runCount - 1]["Sector2"],
+        Sector3: driver.Runs[this.runCount - 1]["Sector3"],
+        Final: driver.Runs[this.runCount - 1]["Final"]
       };
       // console.log("runtable(driver)")
-      console.log("The competitors after the run: ",this.$store.state.competitors)
+      console.log(
+        "The competitors after the run: ",
+        this.$store.state.competitors
+      );
       this.$store.commit("updateRun", run);
     },
+    //connects to the main arduino and handles the gate signals
     connect(port) {
+      var arduinoPort;
       var store = this.$store;
+      var vue = this;
+      if (this.getArduino) {
+        console.log("Previously active connections: ", this.getArduino);
+        // arduinoPort = this.getArduino;
+        this.connectionStatus = true;
+      }
       console.log("connecting to", port);
-      // var attempts = 0;
-      var arduinoPort = new SerialPort(port, {
-        baudRate: 9600
-      });
-      arduinoPort.on("error", function(err) {
-        console.log(err);
-      });
-      this.connectionStatus = true;
-      this.selectedPort = port;
-      this.arduino = arduinoPort;
-      store.commit("newConnect", this.arduino, this.selectedPort);
-      arduinoPort.on("data", function(data) {
-        var msg = data[0];
-        console.log(data[0]);
-        switch (msg) {
-          case 48:
-            gateTriggered(0);
-            break;
-          case 49:
-            gateTriggered(1);
-            break;
-          case 50:
-            gateTriggered(2);
-            break;
-          case 51:
-            gateTriggered(3);
-            break;
-        }
-      });
+      if (this.getArduino.device == undefined) {
+        console.log("store connection", store.state.connection);
+        arduinoPort = new SerialPort(port, {
+          baudRate: 9600
+        });
+        arduinoPort.on("error", function(err) {
+          console.log(err);
+          if (
+            err ==
+            "Error: Error: No such file or directory, cannot open /dev/ttyACM0"
+          ) {
+            vue.message = "Disconnected, please reconnect the Arduino";
+            console.log("Set error message");
+          }
+          store.commit("disconnect");
+          this.connectionStatus = false;
+          vue.startTimer;
+          return;
+        });
+
+        this.connectionStatus = true;
+        this.selectedPort = port;
+        var arduino = arduinoPort;
+        store.commit("newConnect", [arduino, this.selectedPort]);
+        var gateTriggered = this.gateTriggered;
+        arduinoPort.on("data", function(data) {
+          var msg = data[0];
+          console.log(data[0]);
+          switch (msg) {
+            case 48:
+              gateTriggered(0);
+              break;
+            case 49:
+              gateTriggered(1);
+              break;
+            case 50:
+              gateTriggered(2);
+              break;
+            case 51:
+              gateTriggered(3);
+              break;
+          }
+        });
+        arduinoPort.on("close", function() {
+          store.state.connection = {};
+          this.availablePorts = undefined;
+          this.startTimer;
+          alert("Arduino disconnected, reconnect Arduino");
+        });
+      }
     },
+    //checks for avilable arduino connections
+    //while searching adds a waiting .... animation
     checkPorts() {
+      // console.log("Checking for ports");
       SerialPort.list((err, ports) => {
-        // console.log("checking ports...");
         this.stopTimer();
         if (this.dots.length == 5) {
           this.dots = "";
@@ -274,36 +351,55 @@ export default {
           // console.log(ports);
           ports.forEach(port => {
             if (port.manufacturer) {
-              console.log(port);
+              // console.log(port);
               return (this.availablePorts = port);
             }
           });
         }
       });
     },
+    //stops the ..... animation when a connection is made to the main arduino
     stopTimer: function() {
-      if (this.connectionStatus) {
+      if (this.getArduino.device != undefined) {
         window.clearInterval(this.timer);
+        console.log("Timer stopped");
       }
     },
-    newRun() {
-      if(this.allDoneRun){
-        this.$store.commit("newRun")
+    startTimer: function() {
+      if (this.getArduino == {}) {
+        this.timer = window.setInterval(this.checkPorts, 1000);
       }
-      else{
-        return console.log("Not all drivers have completed this run"), alert("Not all drivers have completed this run")
+    },
+    //updates the global run count when all drivers have completed the current run
+    newRun() {
+      if (this.allDoneRun) {
+        this.$store.commit("newRun");
+      } else {
+        return (
+          console.log("Not all drivers have completed this run"),
+          alert("Not all drivers have completed this run")
+        );
       }
     }
   },
+  //interval for checking for arduino on ports
   created: function() {
     this.timer = window.setInterval(this.checkPorts, 1000);
   },
   computed: {
+    //returns the competitor info from the store
     competitors() {
       return this.$store.state.competitors;
     },
+    //returns the global runcount from the store
     runCount() {
-      return this.$store.state.runCount
+      return this.$store.state.runCount;
+    },
+    getGates() {
+      return this.$store.state.gates;
+    },
+    getArduino() {
+      return this.$store.state.connection;
     }
   }
 };
@@ -319,12 +415,42 @@ export default {
 p {
   text-align: left;
 }
-.warning {
-  background: yellow;
+#warning {
+  background: rgb(238, 174, 54);
   color: black;
-  font-size: 1.2em;
+  margin: 10px 10px 10px 0px;
   padding: 5px;
-  width: 50%;
-  border-radius: 5px;
+  width: 30%;
+  border-radius: 15px;
+  text-align: center;
+}
+#connectBtn {
+  margin: 10px;
+}
+#connectionMsg {
+  background: lightgreen;
+  color: black;
+  margin: 10px 10px 10px 0px;
+  padding: 5px;
+  width: 25%;
+  align-items: center;
+  border-radius: 15px;
+}
+#connectionMsg p {
+  margin: 0px;
+  text-align: center;
+}
+#searching {
+  background: rgb(238, 174, 54);
+  color: black;
+  margin: 10px 10px 10px 0px;
+  align-items: center;
+  padding: 5px;
+  width: 15%;
+  border-radius: 15px;
+}
+#searching p {
+  margin: 0px;
+  text-align: center;
 }
 </style>

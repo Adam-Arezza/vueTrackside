@@ -1,53 +1,102 @@
 <template>
   <div class="competitors">
-    <b-table striped :items="competitors" :fields="fields">
+    <b-table small striped :items="competitors" :fields="fields">
       <template slot="show_details" slot-scope="row">
-        <b-button size="sm" @click.stop="row.toggleDetails" class="mr-2">
-       {{row.detailsShowing ? 'Hide' : 'Show'}} Details
-      </b-button>
+        <b-button
+          size="sm"
+          @click.stop="row.toggleDetails"
+          class="mr-2"
+        >{{row.detailsShowing ? 'Hide' : 'Show'}} Details</b-button>
       </template>
       <template slot="row-details" slot-scope="row">
-      <b-card>
-        <b-row no-gutters>
-          <div class="col-sm-4">
-            <p><strong>Make:</strong> {{row.item.Make}}</p>
-            <p><strong>Model:</strong> {{row.item.Model}}</p>
-            <p><strong>Year:</strong> {{row.item.Year}}</p>
-            <p><strong>Tire:</strong> {{row.item.Tire}}</p>
-          </div>
-          <div class="col-sm-8">
-            <!-- <p>{{JSON.stringify(row.item.Runs)}}</p> -->
-            <div class="runInfo" v-for="(run, index) in row.item.Runs" :key="index">
-              <h5>{{index.toUpperCase()}}</h5>
-              <div v-for="(item, heading) in run" :key="heading">
-                <p><strong>{{heading}}: </strong>{{item}}</p>
+        <b-card>
+          <b-row no-gutters>
+            <div class="col-sm-4">
+              <p>
+                <strong>Make:</strong>
+                {{row.item.Make}}
+              </p>
+              <p>
+                <strong>Model:</strong>
+                {{row.item.Model}}
+              </p>
+              <p>
+                <strong>Year:</strong>
+                {{row.item.Year}}
+              </p>
+              <p>
+                <strong>Tire:</strong>
+                {{row.item.Tire}}
+              </p>
+              <p id="thb">
+                <strong>Theoretical Best:</strong>
+                {{theoreticalBest(row.item.Runs)}}
+              </p>
+            </div>
+            <div class="col-sm-8">
+              <!-- <p>{{JSON.stringify(row.item.Runs)}}</p> -->
+              <div class="runInfo" v-for="(run, index) in row.item.Runs" :key="index">
+                <h5>{{(index + 1)}}</h5>
+                <div v-for="(item, heading) in run" :key="heading">
+                  <p>
+                    <strong>{{heading}}:</strong>
+                    {{item}}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </b-row>
-        <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
-      </b-card>
-    </template>
+          </b-row>
+          <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
+        </b-card>
+      </template>
     </b-table>
   </div>
 </template>
 
 <script>
-
+import { resolve } from 'url';
 export default {
-  data(){
+  data() {
     return {
       fields: [
-        {key:'Car'},
-        {key:'Name'},
-        {key:'Class',
-        sortable: true},
-        {key: 'show_details'}
-      ],
-      competitors: this.$store.state.competitors
+        { key: "Car" },
+        { key: "Name" },
+        { key: "Class", sortable: true },
+        { key: "show_details" }
+      ]
+    };
+  },
+  computed: {
+    competitors() {
+      return this.$store.state.competitors
+    }
+  },
+  methods: {
+    theoreticalBest(driverRuns){
+      var sectors = {}
+      driverRuns.forEach(run => {
+        var keys = Object.keys(run)
+        for(var i = 0; i < keys.length; i ++){
+          if(keys[i] != "Final" && keys[i] != "Penalty"){
+            // console.log(keys[i],run[keys[i]])
+            if(!sectors[keys[i]]){
+              sectors[keys[i]] = run[keys[i]]
+            }
+            if(run[keys[i]] < sectors[keys[i]]){
+              sectors[keys[i]] = run[keys[i]]
+            }
+          }
+        }
+      })
+      var total = 0
+      var result = Object.values(sectors)
+      for(var i = 0; i < result.length; i++){
+        total += result[i]
+      }
+      return total.toFixed(3)
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -64,11 +113,19 @@ h5 {
 .competitors p {
   font-size: 1.2rem;
 }
-.runInfo p{
-  text-align: center;
+.runInfo {
+  height: 50%;
 }
-
+.runInfo p {
+  display: flex;
+  text-align: left;
+  margin: 20px;
+}
+#thb {
+  display: flex;
+  background: lightblue;
+  color: black;
+  font-size: 1.3rem;
+  justify-self: end;
+}
 </style>
-
-
-

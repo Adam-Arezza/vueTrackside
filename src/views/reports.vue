@@ -52,9 +52,11 @@ export default {
     };
   },
   computed: {
+    //returns the competitor info from the store
     competitors() {
       return this.$store.state.competitors;
     },
+    //computes the fastest time for each driver
     GetOverallFtd() {
       var result = [];
       this.competitors.forEach(competitor => {
@@ -96,6 +98,7 @@ export default {
       // console.log("GetoverallTimes result: ", result)
       return result;
     },
+    //computes the fastest times based on class
     getClassFtd() {
       var result = [];
       var classA = [];
@@ -122,6 +125,7 @@ export default {
       console.log(result);
       return result;
     },
+    //computes the fastest times based on sectors
     getSectorFtd() {
       var result = [];
       var sector1Fastest = [];
@@ -134,22 +138,13 @@ export default {
         if (competitor.Runs) {
           Object.keys(competitor.Runs).forEach(run => {
             var sectors = Object.keys(competitor.Runs[run]);
-            sector1.push(competitor.Runs[run][sectors[0]]);
-            sector2.push(competitor.Runs[run][sectors[1]]);
-            sector3.push(competitor.Runs[run][sectors[2]]);
+            sector1.push(competitor.Runs[run][sectors[0]]).toFixed(3);
+            sector2.push(competitor.Runs[run][sectors[1]]).toFixed(3);
+            sector3.push(competitor.Runs[run][sectors[2]]).toFixed(3);
           });
           var fastestS1 = Math.min(...sector1);
           var fastestS2 = Math.min(...sector2);
           var fastest3 = Math.min(...sector3);
-          // if(fastestS1 == "infinity"){
-          //   fastestS1 = "---"
-          // }
-          // if(fastestS2 == "infinity"){
-          //   fastestS2 = "---"
-          // }
-          // if(fastest3 == "infinity"){
-          //   fastest3 = "---"
-          // }
           sector1Fastest.push({ driver: competitor.Name, Ftd: fastestS1 });
           sector2Fastest.push({ driver: competitor.Name, Ftd: fastestS2 });
           sector3Fastest.push({ driver: competitor.Name, Ftd: fastest3 });
