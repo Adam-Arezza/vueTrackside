@@ -10,7 +10,11 @@ export default new Vuex.Store({
     liveRun:[],
     staged: [],
     gates: {},
-    runCount: 1
+    runCount: 1,
+    pingToGate:{
+      gate: Number,
+      msg: String
+    }
   },
   mutations: {
     importList(state, list){
@@ -39,9 +43,14 @@ export default new Vuex.Store({
     },
     disconnect(state) {
       state.connection = {}
+    },
+    pingGate(state, gate) {
+      for(var i = 0; i < state.gates.length; i++){
+        if(gate == gates[i]){
+          state.pingToGate.gate = gate
+          state.pingToGate.msg = "ping gate"
+        }
+      }
     }
-  },
-  actions: {
-
   }
 })

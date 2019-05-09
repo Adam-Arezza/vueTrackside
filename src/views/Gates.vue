@@ -1,15 +1,36 @@
 <template>
   <div class="container-fluid gatesSetup">
-    <label for="numGates">Enter the number of gates</label>
-    <input id="numGates" v-model="gateNumber">
-    <button @click="generateGates()">Set</button>
+    <p>Select the total number of gates for the session including start and finish gates.</p>
+    <!-- <input id="numGates" v-model="gateNumber"> -->
+    <div class="row no-gutters">
+      <div class="col-sm-5 offset-sm-1">
+        <b-form-group>
+          <b-form-radio-group stacked v-model="selected" :options="options"></b-form-radio-group>
+        </b-form-group>
+        <p>Number of gates: {{selected}}</p>
+        <b-button @click="generateGates()" size="lg">Set</b-button>
+      </div>
+    <div class="col-sm-6">
+      <div class="gates" v-for="(gate, index) in getGates" :key="index">
+        Gate {{index}}
+        <b-button size="sm" @click="pingGate(index)">Ping Gate</b-button>
+        <p>{{gateResponse}}</p>
+      </div>
+    </div>
+    </div>
   </div>
 </template>
 <script>
 export default {
   data() {
     return {
-      gateNumber: 0
+      selected: 0,
+      options: [
+        { text: "2 gates", value: 2 },
+        { text: "3 gates", value: 3 },
+        { text: "4 gates", value: 4 }
+      ],
+      gateResponse: ""
     };
   },
   methods: {
@@ -20,6 +41,19 @@ export default {
         gates[i] = [];
       }
       this.$store.commit("setGates", gates);
+    },
+    pingGate(gate) {
+      console.log("Pinged gate", gate);
+      this.$store.commit("pingGate", gate);
+    }
+  },
+  computed: {
+    getGates() {
+      return this.$store.state.gates;
+    },
+    gateNumber() {
+      console.log(this.selected);
+      return this.selected;
     }
   }
 };
@@ -33,6 +67,9 @@ input {
   margin: 10px;
   min-width: 10%;
   max-width: 10%;
+}
+.gates {
+  padding: 15px;
 }
 </style>
 

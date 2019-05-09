@@ -2,13 +2,24 @@
   <div class="reports">
     <b-button class="collapseBtn" v-b-toggle.overall>Overall Ftd</b-button>
     <b-collapse id="overall">
-      <b-table :items="GetOverallFtd" :fields="overallFields" :sort-by="ftdSort" :sort-desc="false"></b-table>
+      <b-table
+        small
+        dark
+        striped
+        :items="GetOverallFtd"
+        :fields="overallFields"
+        :sort-by="ftdSort"
+        :sort-desc="false"
+      ></b-table>
     </b-collapse>
     <b-button class="collapseBtn" v-b-toggle.class>Class Ftd</b-button>
     <b-collapse id="class">
       <div v-for="(carClass, index) in classes" :key="index">
         <h4>Class {{carClass}}</h4>
         <b-table
+          small
+          dark
+          striped
           :items="getClassFtd[index]"
           :fields="classFields"
           :sort-by="ftdSort"
@@ -21,6 +32,9 @@
       <div v-for="(sector, index) in sectors" :key="index">
         <h4>Sector {{sector}}</h4>
         <b-table
+          small
+          dark
+          striped
           :items="getSectorFtd[index]"
           :fields="sectorFields"
           :sort-by="ftdSort"
@@ -81,7 +95,7 @@ export default {
           Object.keys(competitor.Runs).forEach(run => {
             if (competitor.Runs[run].Final == fastestTime) {
               console.log("a run: ", run);
-              fastestRun = run;
+              fastestRun = (Number(run) + 1);
             }
           });
           // console.log("The fastest run: ", fastestRun);
@@ -163,12 +177,16 @@ export default {
   text-align: center;
 }
 .collapseBtn {
-  width: 90%;
-  margin: 5px;
+  width: 95%;
+  margin: 3px;
+  font-size: 20px !important;
 }
 h4 {
-  background: rgb(106, 166, 185);
-  color: black;
-  padding: 3px;
+  background: rgb(20, 20, 20);
+  color: white;
+  margin-bottom: 0px !important;
+}
+table {
+  margin: 0px !important;
 }
 </style>

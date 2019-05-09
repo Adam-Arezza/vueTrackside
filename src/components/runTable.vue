@@ -1,31 +1,12 @@
 <template>
   <div class="runTable">
-    <!-- <p>{{getArduino.port}}</p> -->
-    <div id="searching" v-if="!availablePorts && getArduino.device == undefined">
-      <p>Searching for Arduino {{dots}}</p>
-    </div>
-    <div v-if="availablePorts && getArduino.device == undefined">
-      <div id="arduinoConnector">
-        <p v-if="message" id="warning">{{message}}</p>
-        <p>
-          Arduino on port:
-          {{availablePorts.comName}}
-          <button
-            id="connectBtn"
-            @click="connect(availablePorts.comName)"
-          >Connect</button>
-        </p>
-      </div>
-    </div>
-    <div id="connectionMsg" v-if="getArduino.device != undefined">
-      <p>Connected to Arduino on port: {{getArduino.port}}</p>
-    </div>
-    <button @click="stageDriver()">Stage</button>
-    <button @click="gateTriggered(0)">Start</button>
-    <button @click="gateTriggered(1)">G1</button>
-    <button @click="gateTriggered(2)">G2</button>
-    <button @click="gateTriggered(3)">End</button>
-    <button @click="newRun()">Run Complete</button>
+    <arduinoSerial @gateTriggered="gateTriggered(gateNum)"></arduinoSerial>
+    <b-button class="runBtn" size="lg" @click="stageDriver()">Stage</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(0)">Start</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(1)">G1</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(2)">G2</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(3)">End</b-button>
+    <b-button class="runBtn" size="lg" @click="newRun()">Run Complete</b-button>
     <div>
       <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
       <b-modal ref="penaltyModal" id="penalty">
@@ -51,10 +32,10 @@
 </template>
 
 <script>
-import SerialPort from "serialport";
-import { setInterval, clearInterval } from "timers";
+import arduinoSerial from "./arduinoSerial.vue";
 
 export default {
+  components: { arduinoSerial },
   props: {
     liveRun: Array,
     selectedDriver: "",
@@ -72,16 +53,10 @@ export default {
         "Final",
         "Penalty"
       ],
-      availablePorts: undefined,
-      selectedPort: "",
-      connectionStatus: false,
-      timer: "",
-      dots: ".",
       penalty: 0,
       single: "single",
       selected: [],
-      previous: [],
-      message: ""
+      previous: []
     };
   },
   methods: {
@@ -272,103 +247,8 @@ export default {
       );
       this.$store.commit("updateRun", run);
     },
-    //connects to the main arduino and handles the gate signals
-    connect(port) {
-      var arduinoPort;
-      var store = this.$store;
-      var vue = this;
-      if (this.getArduino) {
-        console.log("Previously active connections: ", this.getArduino);
-        // arduinoPort = this.getArduino;
-        this.connectionStatus = true;
-      }
-      console.log("connecting to", port);
-      if (this.getArduino.device == undefined) {
-        console.log("store connection", store.state.connection);
-        arduinoPort = new SerialPort(port, {
-          baudRate: 9600
-        });
-        arduinoPort.on("error", function(err) {
-          console.log(err);
-          if (
-            err ==
-            "Error: Error: No such file or directory, cannot open /dev/ttyACM0"
-          ) {
-            vue.message = "Disconnected, please reconnect the Arduino";
-            console.log("Set error message");
-          }
-          store.commit("disconnect");
-          this.connectionStatus = false;
-          vue.startTimer;
-          return;
-        });
-
-        this.connectionStatus = true;
-        this.selectedPort = port;
-        var arduino = arduinoPort;
-        store.commit("newConnect", [arduino, this.selectedPort]);
-        var gateTriggered = this.gateTriggered;
-        arduinoPort.on("data", function(data) {
-          var msg = data[0];
-          console.log(data[0]);
-          switch (msg) {
-            case 48:
-              gateTriggered(0);
-              break;
-            case 49:
-              gateTriggered(1);
-              break;
-            case 50:
-              gateTriggered(2);
-              break;
-            case 51:
-              gateTriggered(3);
-              break;
-          }
-        });
-        arduinoPort.on("close", function() {
-          store.state.connection = {};
-          this.availablePorts = undefined;
-          this.startTimer;
-          alert("Arduino disconnected, reconnect Arduino");
-        });
-      }
-    },
-    //checks for avilable arduino connections
-    //while searching adds a waiting .... animation
-    checkPorts() {
-      // console.log("Checking for ports");
-      SerialPort.list((err, ports) => {
-        this.stopTimer();
-        if (this.dots.length == 5) {
-          this.dots = "";
-        }
-        this.dots += ".";
-        if (err) {
-          console.log(err);
-        }
-        if (ports) {
-          // console.log(ports);
-          ports.forEach(port => {
-            if (port.manufacturer) {
-              // console.log(port);
-              return (this.availablePorts = port);
-            }
-          });
-        }
-      });
-    },
-    //stops the ..... animation when a connection is made to the main arduino
-    stopTimer: function() {
-      if (this.getArduino.device != undefined) {
-        window.clearInterval(this.timer);
-        console.log("Timer stopped");
-      }
-    },
-    startTimer: function() {
-      if (this.getArduino == {}) {
-        this.timer = window.setInterval(this.checkPorts, 1000);
-      }
+    pingBack(msg) {
+      this.$store.commit("pingBack", msg);
     },
     //updates the global run count when all drivers have completed the current run
     newRun() {
@@ -400,57 +280,19 @@ export default {
     },
     getArduino() {
       return this.$store.state.connection;
+    },
+    getPing() {
+      return this.$store.state.pingToGate;
     }
   }
 };
 </script>
 
-<style>
-#arduinoConector {
-  text-align: left;
-}
-#arduinoConnector button {
-  text-align: left;
-}
+<style scoped>
 p {
   text-align: left;
 }
-#warning {
-  background: rgb(238, 174, 54);
-  color: black;
-  margin: 10px 10px 10px 0px;
-  padding: 5px;
-  width: 30%;
-  border-radius: 15px;
-  text-align: center;
-}
-#connectBtn {
-  margin: 10px;
-}
-#connectionMsg {
-  background: lightgreen;
-  color: black;
-  margin: 10px 10px 10px 0px;
-  padding: 5px;
-  width: 25%;
-  align-items: center;
-  border-radius: 15px;
-}
-#connectionMsg p {
-  margin: 0px;
-  text-align: center;
-}
-#searching {
-  background: rgb(238, 174, 54);
-  color: black;
-  margin: 10px 10px 10px 0px;
-  align-items: center;
-  padding: 5px;
-  width: 15%;
-  border-radius: 15px;
-}
-#searching p {
-  margin: 0px;
-  text-align: center;
+.runBtn {
+  margin: 2px;
 }
 </style>

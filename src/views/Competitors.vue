@@ -1,6 +1,6 @@
 <template>
   <div class="competitors">
-    <b-table small striped :items="competitors" :fields="fields">
+    <b-table dark small striped :items="competitors" :fields="fields">
       <template slot="show_details" slot-scope="row">
         <b-button
           size="sm"
@@ -9,9 +9,9 @@
         >{{row.detailsShowing ? 'Hide' : 'Show'}} Details</b-button>
       </template>
       <template slot="row-details" slot-scope="row">
-        <b-card>
-          <b-row no-gutters>
-            <div class="col-sm-4">
+        <b-card bg-variant="dark" class="infoCard">
+          <b-row class="info" no-gutters>
+            <div class="col-sm-5 driverInfo">
               <p>
                 <strong>Make:</strong>
                 {{row.item.Make}}
@@ -28,18 +28,22 @@
                 <strong>Tire:</strong>
                 {{row.item.Tire}}
               </p>
-              <p id="thb">
+              <p class="specialTimes">
                 <strong>Theoretical Best:</strong>
                 {{theoreticalBest(row.item.Runs)}}
               </p>
+              <p class="specialTimes">
+                <strong>Delta:</strong>
+                {{deltaTime(row.item.Runs)}}
+              </p>
             </div>
-            <div class="col-sm-8">
+            <div class="col-sm-5 runInfo">
               <!-- <p>{{JSON.stringify(row.item.Runs)}}</p> -->
-              <div class="runInfo" v-for="(run, index) in row.item.Runs" :key="index">
-                <h5>{{(index + 1)}}</h5>
+              <div v-for="(run, index) in row.item.Runs" :key="index">
+                <h5>{{("Run" +(index+1))}}</h5>
                 <div v-for="(item, heading) in run" :key="heading">
                   <p>
-                    <strong>{{heading}}:</strong>
+                    <strong>{{heading }}:</strong>
                     {{item}}
                   </p>
                 </div>
@@ -54,7 +58,7 @@
 </template>
 
 <script>
-import { resolve } from 'url';
+import { resolve } from "url";
 export default {
   data() {
     return {
@@ -68,32 +72,52 @@ export default {
   },
   computed: {
     competitors() {
-      return this.$store.state.competitors
+      return this.$store.state.competitors;
     }
   },
   methods: {
-    theoreticalBest(driverRuns){
-      var sectors = {}
+    theoreticalBest(driverRuns) {
+      if(!driverRuns){
+        return console.log("Driver has no runs")
+      }
+      var sectors = {};
       driverRuns.forEach(run => {
-        var keys = Object.keys(run)
-        for(var i = 0; i < keys.length; i ++){
-          if(keys[i] != "Final" && keys[i] != "Penalty"){
+        var keys = Object.keys(run);
+        for (var i = 0; i < keys.length; i++) {
+          if (keys[i] != "Final" && keys[i] != "Penalty") {
             // console.log(keys[i],run[keys[i]])
-            if(!sectors[keys[i]]){
-              sectors[keys[i]] = run[keys[i]]
+            if (!sectors[keys[i]]) {
+              sectors[keys[i]] = run[keys[i]];
             }
-            if(run[keys[i]] < sectors[keys[i]]){
-              sectors[keys[i]] = run[keys[i]]
+            if (run[keys[i]] < sectors[keys[i]]) {
+              sectors[keys[i]] = run[keys[i]];
             }
           }
         }
-      })
-      var total = 0
-      var result = Object.values(sectors)
-      for(var i = 0; i < result.length; i++){
-        total += result[i]
+      });
+      var total = 0;
+      var result = Object.values(sectors);
+      for (var i = 0; i < result.length; i++) {
+        total += result[i];
       }
-      return total.toFixed(3)
+      return total.toFixed(3);
+    },
+    deltaTime(driverRuns) {
+      if(!driverRuns){
+        return console.log("Driver has no runs")
+      }
+      var thb = this.theoreticalBest(driverRuns);
+      var finalTimes = {};
+      driverRuns.forEach(run => {
+        if (!finalTimes.best) {
+          finalTimes.best = run.Final;
+        }
+        if (run.Final < finalTimes.best) {
+          finalTimes.best = run.Final;
+        }
+      });
+      // console.log(finalTimes);
+      return (finalTimes.best - thb).toFixed(3);
     }
   }
 };
@@ -106,7 +130,7 @@ h3 {
   padding: 3px;
 }
 h5 {
-  background: rgb(106, 166, 185);
+  background: rgb(184, 189, 190);
   color: black;
   padding: 3px;
 }
@@ -115,17 +139,23 @@ h5 {
 }
 .runInfo {
   height: 50%;
+  line-height: 10px;
 }
 .runInfo p {
   display: flex;
   text-align: left;
-  margin: 20px;
+  margin: 15px;
 }
-#thb {
+.specialTimes {
   display: flex;
   background: lightblue;
   color: black;
   font-size: 1.3rem;
   justify-self: end;
+  width: 50%;
+}
+.info {
+  justify-content: center;
+  align-items: center;
 }
 </style>
