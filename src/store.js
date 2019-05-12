@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import ClassPax from './classes'
 
 Vue.use(Vuex)
 
@@ -11,10 +12,7 @@ export default new Vuex.Store({
     staged: [],
     gates: {},
     runCount: 1,
-    pingToGate:{
-      gate: Number,
-      msg: String
-    }
+    classList: ClassPax
   },
   mutations: {
     importList(state, list){
@@ -43,14 +41,6 @@ export default new Vuex.Store({
     },
     disconnect(state) {
       state.connection = {}
-    },
-    pingGate(state, gate) {
-      for(var i = 0; i < state.gates.length; i++){
-        if(gate == gates[i]){
-          state.pingToGate.gate = gate
-          state.pingToGate.msg = "ping gate"
-        }
-      }
     }
   }
 })

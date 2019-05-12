@@ -21,6 +21,8 @@
   </div>
 </template>
 <script>
+// handles the gate setup for number of gates in the autoX event
+// minimum of 2 gates required, plus any more
 export default {
   data() {
     return {

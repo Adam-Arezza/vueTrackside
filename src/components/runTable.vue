@@ -1,6 +1,6 @@
 <template>
   <div class="runTable">
-    <arduinoSerial @gateTriggered="gateTriggered(gateNum)"></arduinoSerial>
+    <arduinoSerial @gateTriggered="handleGates"></arduinoSerial>
     <b-button class="runBtn" size="lg" @click="stageDriver()">Stage</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(0)">Start</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(1)">G1</b-button>
@@ -32,6 +32,7 @@
 </template>
 
 <script>
+//main table for live run times for the current run
 import arduinoSerial from "./arduinoSerial.vue";
 
 export default {
@@ -50,13 +51,15 @@ export default {
         "Sector1",
         "Sector2",
         "Sector3",
-        "Final",
+        "RawFinal",
+        "PaxFinal",
         "Penalty"
       ],
       penalty: 0,
       single: "single",
       selected: [],
-      previous: []
+      previous: [],
+      tableTest: "someHeader"
     };
   },
   methods: {
@@ -126,6 +129,9 @@ export default {
       }
       console.log("After penalties: ", this.competitors);
     },
+    handleGates(gate) {
+      this.gateTriggered(gate)
+    },
     //adds a competitor to the staged list in the store
     //competitor at starting line
     stageDriver() {
@@ -167,9 +173,9 @@ export default {
       if (!driver.rawTimes) {
         driver.rawTimes = [];
       }
-      if (!driver.times) {
-        driver.times = [];
-      }
+      // if (!driver.times) {
+      //   driver.times = [];
+      // }
       if (!driver.Runs) {
         driver.Runs = [];
       }
@@ -191,61 +197,77 @@ export default {
     },
     //calculates the drivers sector times
     getSectorTimes(driver) {
+      var times = [];
+      var sectors = [];
+      // console.log(Object.keys(this.getGates))
+      for (var i = 0; i < Object.keys(this.getGates).length - 1; i++) {
+        // console.log(i)
+        sectors.push("Sector" + (i + 1));
+      }
+      // console.log("Sectors...", sectors)
+      var sectorObj = {};
+      sectors.forEach(sector => {
+        sectorObj[sector] = 0;
+      });
+      var runsObj = {
+        RawFinal: 0,
+        PaxFinal: 0,
+        Penalty: 0
+      };
+      // console.log(sectorObj)
+      // console.log(runsObj)
+      var run = { ...sectorObj, ...runsObj };
       if (driver.Runs) {
-        driver.Runs.push({
-          Sector1: 0,
-          Sector2: 0,
-          Sector3: 0,
-          Final: 0,
-          Penalty: 0
-        });
+        driver.Runs.push(run);
       }
       var rawSectors = driver.rawTimes;
-      var i = 0;
       var sector = 1;
 
       if (!rawSectors || rawSectors.length < 1) {
         return;
       }
-      for (i = 0; i < rawSectors.length - 1; i++) {
-        driver.times.push((rawSectors[i + 1] - rawSectors[i]) / 1000);
+      for (var i = 0; i < rawSectors.length - 1; i++) {
+        times.push((rawSectors[i + 1] - rawSectors[i]) / 1000);
       }
-      driver.times.push((rawSectors[3] - rawSectors[0]) / 1000);
+      times.push((rawSectors[3] - rawSectors[0]) / 1000);
       // console.log(driver)
-      driver.times.forEach(time => {
+      times.forEach(time => {
         // console.log(time);
         // console.log(driver);
         // console.log(driver.Runs["run" + this.runCount]);
+
+        //THIS CODE NEEDS  TO BE CHANGED TO ALLOW FOR ANY NUMBER OF SECTORS
         if (sector <= 3) {
           driver.Runs[this.runCount - 1]["Sector" + sector] = time;
           sector++;
         }
         if (sector > 3) {
-          driver.Runs[this.runCount - 1]["Final"] = time;
+          driver.Runs[this.runCount - 1]["RawFinal"] = time;
         }
-        driver.rawTimes = [];
-        driver.times = [];
+        //THIS CODE NEEDS  TO BE CHANGED TO ALLOW FOR ANY NUMBER OF SECTORS
       });
-      // console.log(driver.times);
+      driver.Runs[this.runCount - 1]["PaxFinal"] = Number(this.paxTime(driver));
+      console.log(sectorObj);
+      driver.rawTimes = [];
+      times = [];
     },
     //updates the liverun state in the store
     //updates the live runtable values
     runTable(driver) {
-      var run = {
+      var run = driver.Runs[this.runCount - 1];
+      var extraParams = {
         Car: driver.Car,
         Name: driver.Name,
-        Make: driver.Make,
-        Sector1: driver.Runs[this.runCount - 1]["Sector1"],
-        Sector2: driver.Runs[this.runCount - 1]["Sector2"],
-        Sector3: driver.Runs[this.runCount - 1]["Sector3"],
-        Final: driver.Runs[this.runCount - 1]["Final"]
+        Make: driver.Make
       };
-      // console.log("runtable(driver)")
+
+      var runData = { ...run, ...extraParams };
+
       console.log(
         "The competitors after the run: ",
         this.$store.state.competitors
       );
-      this.$store.commit("updateRun", run);
+      this.$store.commit("updateRun", runData);
     },
     pingBack(msg) {
       this.$store.commit("pingBack", msg);
@@ -260,6 +282,19 @@ export default {
           alert("Not all drivers have completed this run")
         );
       }
+    },
+    paxTime(driver) {
+      var carClass = driver.Class;
+      var pax;
+      this.classList.forEach(c => {
+        c.subClasses.forEach(subclass => {
+          if (subclass.class == carClass) {
+            pax = subclass.pax;
+          }
+        });
+      });
+      var result = driver.Runs[this.runCount - 1]["RawFinal"] * pax;
+      return result.toFixed(3);
     }
   },
   //interval for checking for arduino on ports
@@ -283,6 +318,9 @@ export default {
     },
     getPing() {
       return this.$store.state.pingToGate;
+    },
+    classList() {
+      return this.$store.state.classList;
     }
   }
 };

@@ -3,7 +3,7 @@ import Router from 'vue-router'
 import Main from './views/Main.vue'
 import Competitors from './views/Competitors.vue'
 import Gates from './views/Gates.vue'
-import reports from "./views/reports.vue"
+import Reports from "./views/reports.vue"
 
 
 Vue.use(Router)
@@ -30,7 +30,7 @@ export default new Router({
     {
       path: '/reports',
       name: 'reports',
-      component: reports
+      component: Reports
     }
   ]
 })

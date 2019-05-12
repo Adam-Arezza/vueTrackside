@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import { resolve } from "url";
+// handles display of individual driver stats for the autox event
 export default {
   data() {
     return {
@@ -84,7 +84,7 @@ export default {
       driverRuns.forEach(run => {
         var keys = Object.keys(run);
         for (var i = 0; i < keys.length; i++) {
-          if (keys[i] != "Final" && keys[i] != "Penalty") {
+          if (keys[i] != "PaxFinal" && keys[i] != "Penalty" && keys[i] != "RawFinal") {
             // console.log(keys[i],run[keys[i]])
             if (!sectors[keys[i]]) {
               sectors[keys[i]] = run[keys[i]];
@@ -110,10 +110,10 @@ export default {
       var finalTimes = {};
       driverRuns.forEach(run => {
         if (!finalTimes.best) {
-          finalTimes.best = run.Final;
+          finalTimes.best = run.RawFinal;
         }
         if (run.Final < finalTimes.best) {
-          finalTimes.best = run.Final;
+          finalTimes.best = run.RawFinal;
         }
       });
       // console.log(finalTimes);

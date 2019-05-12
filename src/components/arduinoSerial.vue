@@ -22,6 +22,7 @@
   </div>
 </template>
 <script>
+// adruinoSerial handles connecting to the main arduino and trigger events from the gate arduinos
 import SerialPort from "serialport";
 import { setInterval, clearInterval } from "timers";
 
