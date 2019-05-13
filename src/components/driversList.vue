@@ -1,6 +1,8 @@
 <template>
   <div class="driverList">
-    <p v-if="competitors.length > 0"><strong>Select a driver from the dropdown</strong></p>
+    <p v-if="competitors.length > 0">
+      <strong>Select a driver from the dropdown</strong>
+    </p>
     <select v-model="selectedDriver" id="selector" v-if="competitors.length > 2">
       <option
         id="drivers"

@@ -10,19 +10,17 @@
         <p>Number of gates: {{selected}}</p>
         <b-button @click="generateGates()" size="lg">Set</b-button>
       </div>
-    <div class="col-sm-6">
-      <div class="gates" v-for="(gate, index) in getGates" :key="index">
-        Gate {{index}}
-        <b-button size="sm" @click="pingGate(index)">Ping Gate</b-button>
-        <p>{{gateResponse}}</p>
+      <div class="col-sm-6">
+        <div class="gates" v-for="(gate, index) in getGates" :key="index">
+          Gate {{index}}
+          <b-button size="sm" @click="pingGate(index)">Ping Gate</b-button>
+          <p>{{gateResponse}}</p>
+        </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
 <script>
-// handles the gate setup for number of gates in the autoX event
-// minimum of 2 gates required, plus any more
 export default {
   data() {
     return {
@@ -36,6 +34,7 @@ export default {
     };
   },
   methods: {
+    //sets the number of gates for the autocross event into the store
     generateGates() {
       var gates = {};
       var numberOfGates = this.gateNumber;
@@ -43,18 +42,16 @@ export default {
         gates[i] = [];
       }
       this.$store.commit("setGates", gates);
-    },
-    pingGate(gate) {
-      console.log("Pinged gate", gate);
-      this.$store.commit("pingGate", gate);
     }
   },
   computed: {
+    //returns the number of gates from the store
     getGates() {
       return this.$store.state.gates;
     },
+    //computes the gate number based on radio btn selection
     gateNumber() {
-      console.log(this.selected);
+      // console.log(this.selected);
       return this.selected;
     }
   }
@@ -74,5 +71,3 @@ input {
   padding: 15px;
 }
 </style>
-
-

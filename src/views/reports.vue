@@ -2,13 +2,7 @@
   <div class="reports">
     <b-button class="collapseBtn" v-b-toggle.overall>Overall Ftd</b-button>
     <b-collapse id="overall">
-      <b-table
-        small
-        dark
-        striped
-        :items="GetOverallFtd"
-        :fields="overallFields"
-      >
+      <b-table small dark striped :items="GetOverallFtd" :fields="overallFields">
         <template slot="rank" slot-scope="data">{{data.index +1}}</template>
       </b-table>
     </b-collapse>
@@ -50,13 +44,14 @@
 </template>
 
 <script>
+//imports the raceCalcs mixin
 import { reportCalcs } from "../mixins/reportCalcs.js";
-// reports handles the calculations and displaying of the race highlights
 export default {
   mixins: [reportCalcs],
   data() {
     return {
       ftdSort: "Ftd",
+      //fields for the tables
       overallFields: [
         "rank",
         { key: "carNumber" },
@@ -86,15 +81,16 @@ export default {
     };
   },
   methods: {
+    //returns the main vehicle classes as an array
     classList() {
       var classes = [];
       var cList = this.$store.state.classList;
       cList.forEach(c => {
         classes.push(c.class);
       });
-      // console.log(classes);
       return classes;
     },
+    //returns the number of sectors on the course based on the number of gates set in the store
     getSectors() {
       var result = [];
       var gateCount = Object.keys(this.$store.state.gates).length;
@@ -106,13 +102,15 @@ export default {
     }
   },
   computed: {
-    //returns the competitor info from the store
+    //returns the competitors list from the store
     competitors() {
       return this.$store.state.competitors;
     },
+    //returns the Ftds for each class using the mixin function from raceCalcs mixin
     classFtd() {
       return this.getClassFtd();
     },
+    //returns the Ftds for each sector using the mixin function from raceCalcs mixin
     sectorFtd() {
       return this.getSectorFtd();
     }

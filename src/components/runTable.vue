@@ -32,7 +32,7 @@
 </template>
 
 <script>
-//main table for live run times for the current run
+//imports the arduino serial component
 import arduinoSerial from "./arduinoSerial.vue";
 
 export default {
@@ -63,7 +63,7 @@ export default {
     };
   },
   methods: {
-    //opens the penalties modal on row selection
+    //opens the penalties modal on driver selection
     rowSelected(items) {
       if (items.length > 0) {
         this.$refs["penaltyModal"].show();
@@ -127,10 +127,10 @@ export default {
           }
         });
       }
-      console.log("After penalties: ", this.competitors);
+      // console.log("After penalties: ", this.competitors);
     },
     handleGates(gate) {
-      this.gateTriggered(gate)
+      this.gateTriggered(gate);
     },
     //adds a competitor to the staged list in the store
     //competitor at starting line
@@ -195,7 +195,7 @@ export default {
       }
       this.getGates[nextGate].push(driver);
     },
-    //calculates the drivers sector times
+    //calculates the drivers sector times and final runtime (before pax)
     getSectorTimes(driver) {
       var times = [];
       var sectors = [];
@@ -283,6 +283,7 @@ export default {
         );
       }
     },
+    //calculates the paxtime for the driver
     paxTime(driver) {
       var carClass = driver.Class;
       var pax;
@@ -310,15 +311,18 @@ export default {
     runCount() {
       return this.$store.state.runCount;
     },
+    //returns the number of gates from the store
     getGates() {
       return this.$store.state.gates;
     },
+    //returns the current arduino connection object
     getArduino() {
       return this.$store.state.connection;
     },
     getPing() {
       return this.$store.state.pingToGate;
     },
+    //returns the classlist from the store
     classList() {
       return this.$store.state.classList;
     }

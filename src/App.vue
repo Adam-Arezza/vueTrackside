@@ -5,6 +5,7 @@
   </div>
 </template>
 <script>
+//imports the navigation bar component
 import topNav from "./components/topNav.vue";
 
 export default {

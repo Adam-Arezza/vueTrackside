@@ -12,7 +12,7 @@
 </template>
 
 <script>
-// @ is an alias to /src
+//imports the runtable and driverlist components
 import runTable from "../components/runTable.vue";
 import driverList from "../components/driversList.vue";
 
@@ -24,6 +24,7 @@ export default {
     };
   },
   methods: {
+    //sends the runtable component the driver selected from the driverlist dropdown
     getDriver(driver) {
       console.log(driver);
       return (this.driver = driver);
@@ -36,16 +37,20 @@ export default {
     },
     //checks if all competitors have completed the current run
     allRunsCompleted() {
-      if (this.competitors.length == this.$store.state.liveRun.length) {
+      if (
+        this.competitors.length > 0 &&
+        this.competitors.length == this.$store.state.liveRun.length
+      ) {
         return true;
       } else {
         return false;
       }
     },
-    //returns the runs for the run table from the store
+    //returns the runs for the runtable from the store
     currentRun() {
       return this.$store.state.liveRun;
     },
+    //returns the current run # from the store
     runCount() {
       return this.$store.state.runCount;
     }
@@ -54,6 +59,4 @@ export default {
 </script>
 
 <style>
-
 </style>
-

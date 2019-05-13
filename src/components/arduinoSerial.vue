@@ -159,7 +159,7 @@ export default {
 </script>
 <style>
 .arduino {
-width: 100%;
+  width: 100%;
 }
 #arduinoConector {
   text-align: left;

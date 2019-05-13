@@ -3,7 +3,7 @@
     <b-button-group>
       <b-dropdown id="file-dropdown" text="File" class="sm">
         <b-dropdown-item @click="importCsv()">Import</b-dropdown-item>
-        <b-dropdown-item @click="exportModal()">Export to Csv</b-dropdown-item>
+        <b-dropdown-item @click="exportData()">Export to spreadsheet</b-dropdown-item>
         <b-dropdown-item @click="saveToLocal()">Save</b-dropdown-item>
         <b-dropdown-item @click="loadModal()">Load</b-dropdown-item>
         <b-dropdown-item @click="shutDown()">Close</b-dropdown-item>
@@ -44,29 +44,6 @@
         <b-button @click="closeModal('load-modal')">Close</b-button>
       </div>
     </b-modal>
-    <b-modal
-      ref="export-modal"
-      id="export-modal"
-      title="Export selected to spreadsheet"
-      :header-bg-variant="'dark'"
-    >
-      <div>
-        <p>Select from previous save data or the currentlty loaded data to export</p>
-        <ul>
-          <li
-            v-for="(item, index) in loadModalData"
-            :key="index"
-            @click="exportCsv(item)"
-          >{{dayAndTime(item.date)}}</li>
-        </ul>
-      </div>
-      <div>
-        <b-button @click="exportCsv('current')">Export current data</b-button>
-      </div>
-      <div slot="modal-footer">
-        <b-button @click="closeModal('export-modal')">Close</b-button>
-      </div>
-    </b-modal>
   </div>
   <!-- <router-view/> -->
 </template>
@@ -75,10 +52,11 @@
 // handles import, save, load and export functions of the application
 import fs from "fs";
 import XLSX from "xlsx";
-import { reportCalcs } from '../mixins/reportCalcs';
+import { reportCalcs } from "../mixins/reportCalcs";
 const { dialog } = require("electron").remote;
 const remote = require("electron").remote;
 
+//returns JSON of competitors given a CSV file
 function csvJson(csv) {
   var competitors = [];
   var rows = csv.split("\n");
@@ -98,17 +76,18 @@ export default {
   mixins: [reportCalcs],
   data() {
     return {
-      loadModalData: []
+      loadModalData: [],
+      compList: this.competitors
     };
   },
   methods: {
-    exportModal() {
-      this.$refs["export-modal"].show();
-      this.loadFromLocal();
-    },
+    //activates the export data modal and loads localstorage data for selection
+    //closes the modal
     closeModal(modal) {
       this.$refs[modal].hide();
     },
+    //returns a formatted date and time of an event from the date object saved to the event
+    //format: day, month, day(number), hour:minute
     dayAndTime(date) {
       var months = [
         "Jan",
@@ -143,6 +122,8 @@ export default {
         mins
       );
     },
+    //opens a filesystem dialog for opening a selected CSV file
+    //saves the competitor list as JSON to the store
     importCsv() {
       var store = this.$store;
       dialog.showOpenDialog(function(fileNames) {
@@ -171,6 +152,7 @@ export default {
         }
       });
     },
+    //creates a new save in the localstorage
     saveToLocal() {
       var competitors = this.$store.state.competitors;
       var newData;
@@ -206,16 +188,19 @@ export default {
         );
       }
     },
+    //activates the load modal
     loadModal() {
       this.$refs["load-modal"].show();
       this.loadFromLocal();
     },
+    //retrieves data from the localstorage saved data
     loadFromLocal() {
       if (localStorage.getItem("competitorData")) {
         var competitorData = JSON.parse(localStorage.getItem("competitorData"));
         this.loadModalData = competitorData;
       }
     },
+    //loads the selected save data into the store
     load(data) {
       var competitors = data.competitors;
       var runCount = data.runCount;
@@ -223,60 +208,77 @@ export default {
       this.$store.commit("importList", competitors);
       // console.log(this.$store.state.competitors);
       this.$store.state.runCount = runCount;
-      this.$store.state.gates = data.gates
+      this.$store.state.gates = data.gates;
+      this.closeModal("load-modal");
     },
-    exportCsv(data) {
-
+    //exports the selected data into a tabbed spreadsheet with Ftd data (overall, pax, sectors, classes)
+    exportData() {
+      if(this.competitors.length == 0){
+        return alert("No data, please load data before export")
+      }
+      if(this.runCount <= 1){
+        return alert("All runs must be complete before export")
+      }
       //formatting the output of GetOverallFtd() for the spreadshseet
-      var overallData = this.GetOverallFtd().sort((a,b) => (a.Ftd < b.Ftd) ? -1 : 1)
+      var overallData = this.GetOverallFtd().sort((a, b) =>
+        a.Ftd < b.Ftd ? -1 : 1
+      );
       overallData.forEach(driver => {
-        driver.class = driver.class[1]
-      })
+        driver.class = driver.class[1];
+      });
       // console.log(overallData)
 
       //Formatting the output of getClassFtd() for the spreadsheet
-      var classData = this.getClassFtd()
-      var classes = Object.keys(classData)
-      var streetData 
-      var streetTouringData
-      var streetPreppedData
-      var preparedData
-      var modifiedData
-      for(var i = 0; i < classes.length; i++){
-        for(var n = 0; n < classData[classes[i]].length; n ++){
-          // console.log(classData[classes[i]][n])
-          classData[classes[i]][n].class = classData[classes[i]][n].class[1]
+      var classFtdData = [];
+      var classData = this.getClassFtd();
+      var classHeads = Object.keys(classData);
+      // console.log(classData);
+      // console.log(classHeads);
+      classHeads.forEach(head => {
+        // console.log(head);
+        classFtdData.push([head]);
+        if (classData[head].length == 0) {
+          // console.log(head);
+          // console.log("no data");
+          classFtdData.push([" "]);
+        } else {
+          // console.log(Object.keys(classData[head][0]));
+          classData[head].sort((a, b) => (a.Ftd < b.Ftd ? -1 : 1));
+          classFtdData.push(Object.keys(classData[head][0]));
         }
-        classData[classes[i]] = classData[classes[i]].sort((a,b) => (a.Ftd < b.Ftd) ? -1 : 1)
-      }
-      for(var c in classes){
-        // console.log(classes[c])
-        switch (classes[c]){
-          case "Street":
-          streetData = (classData[classes[c]])
-          break
-          case "Street Touring":
-          streetTouringData = (classData[classes[c]])
-          break
-          case "Street Prepared":
-          streetPreppedData = (classData[classes[c]])
-          break
-          case "Prepared":
-          preparedData = (classData[classes[c]])
-          break
-          case "Modified":
-          modifiedData = (classData[classes[c]])
-          break
+        for (var i = 0; i < classData[head].length; i++) {
+          // console.log(classData[head][i]);
+          classData[head][i].class = classData[head][i].class[1];
+          classFtdData.push(Object.values(classData[head][i]));
         }
-      }
-      // console.log(overallData)
-      // console.log(streetData)
-      // console.log(classes)
-      // console.log(classHeadings)
-      // console.log(classFtdData)
+      });
+      // console.log(classFtdData);
 
-      var sectorData
-      var paxData
+      //formatting the sector data for the spreadsheet
+      var sectorData;
+      var sectorFtdData = [];
+      sectorData = this.getSectorFtd();
+      var sectorHeads = Object.keys(sectorData);
+      sectorHeads.forEach(sector => {
+        // console.log("Sector: ", Number(sector) +1)
+        sectorFtdData.push(["Sector: ", Number(sector) + 1]);
+        sectorData[sector] = sectorData[sector].sort((a, b) =>
+          a.Ftd < b.Ftd ? -1 : 1
+        );
+        // console.log(Object.keys(sectorData[sector][0]))
+        sectorFtdData.push(Object.keys(sectorData[sector][0]));
+        // console.log(sectorData[sector])
+        for (var i = 0; i < sectorData[sector].length; i++) {
+          // console.log(Object.values(sectorData[sector][i]))
+          sectorFtdData.push(Object.values(sectorData[sector][i]));
+        }
+      });
+      var paxData = this.paxCalcs();
+      paxData = paxData.sort((a, b) => (a.paxTime < b.paxTime ? -1 : 1));
+      paxData.forEach(driver => {
+        driver.class = driver.class[1];
+      });
+
       //starting a new workbook
       var wb = XLSX.utils.book_new();
       wb.Props = {
@@ -286,42 +288,42 @@ export default {
         CreateDate: new Date()
       };
       //giving the workbook first sheet name
-      wb.SheetNames.push("FTD-Raw")
-      dialog.showSaveDialog(null, null, function(filename) {
+      var vue = this;
+      wb.SheetNames.push("FTD-Raw");
+      dialog.showSaveDialog(function(filename) {
         if (filename) {
           console.log(filename);
-          if (data == "current") {
-            var wsOverall = XLSX.utils.json_to_sheet(overallData)
-            wb.Sheets['FTD-Raw'] = wsOverall
-            // console.log(overallData)
-            var wsS = XLSX.utils.json_to_sheet(streetData)
-            var wsSP = XLSX.utils.json_to_sheet(streetPreppedData)
-            var wsST = XLSX.utils.json_to_sheet(streetTouringData)
-            var wsP = XLSX.utils.json_to_sheet(preparedData)
-            var wsM = XLSX.utils.json_to_sheet(modifiedData)
-            XLSX.utils.book_append_sheet(wb,wsS,"FTD-Street")
-            XLSX.utils.book_append_sheet(wb,wsST,"FTD-Street Touring")
-            XLSX.utils.book_append_sheet(wb,wsSP,"FTD-Street Prepared")
-            XLSX.utils.book_append_sheet(wb,wsP,"FTD-Prepared")
-            XLSX.utils.book_append_sheet(wb,wsM,"FTD-Modifed")
-            XLSX.writeFile(wb, filename)
-            
-            console.log("Exporting all current data to spreadsheet");
+          var wsOverall = XLSX.utils.json_to_sheet(overallData);
+          wb.Sheets["FTD-Raw"] = wsOverall;
+          var wsClasses = XLSX.utils.aoa_to_sheet(classFtdData);
+          var wsSectors = XLSX.utils.aoa_to_sheet(sectorFtdData);
+          var wsPax = XLSX.utils.json_to_sheet(paxData);
+          XLSX.utils.book_append_sheet(wb, wsPax, "FTD-Pax");
+          XLSX.utils.book_append_sheet(wb, wsClasses, "FTD-Class");
+          XLSX.utils.book_append_sheet(wb, wsSectors, "FTD-Sectors");
+          if (filename.split(".")[1] == "xlsx") {
+            XLSX.writeFile(wb, filename);
+          } else {
+            XLSX.writeFile(wb, filename + ".xlsx");
           }
-          if (typeof data == "object") {
-            console.log("Exporting save data to spreadsheet");
-          }
+
+          console.log("Exporting all current data to spreadsheet");
         } else {
           console.log("no file");
         }
       });
     },
+    //closes the application
     shutDown() {
       var w = remote.getCurrentWindow();
       w.close();
     }
   },
   computed: {
+    competitors() {
+      return this.$store.state.competitors
+    },
+    //returns the list of staged/running competitors
     stagedList() {
       return this.$store.state.staged;
     },
@@ -335,11 +337,13 @@ export default {
         return false;
       }
     },
+    //returns the current run # from the store
     runCount() {
       return this.$store.state.runCount;
     },
+    //returns the number of gates from the store
     gates() {
-      return this.$store.state.gates
+      return this.$store.state.gates;
     }
   }
 };

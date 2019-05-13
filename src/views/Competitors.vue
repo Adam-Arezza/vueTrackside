@@ -70,21 +70,21 @@ export default {
       ]
     };
   },
-  computed: {
-    competitors() {
-      return this.$store.state.competitors;
-    }
-  },
   methods: {
+    //returns the drivers theoretical best run time based on their fastest sectors of the day
     theoreticalBest(driverRuns) {
-      if(!driverRuns){
-        return console.log("Driver has no runs")
+      if (!driverRuns) {
+        return console.log("Driver has no runs");
       }
       var sectors = {};
       driverRuns.forEach(run => {
         var keys = Object.keys(run);
         for (var i = 0; i < keys.length; i++) {
-          if (keys[i] != "PaxFinal" && keys[i] != "Penalty" && keys[i] != "RawFinal") {
+          if (
+            keys[i] != "PaxFinal" &&
+            keys[i] != "Penalty" &&
+            keys[i] != "RawFinal"
+          ) {
             // console.log(keys[i],run[keys[i]])
             if (!sectors[keys[i]]) {
               sectors[keys[i]] = run[keys[i]];
@@ -102,9 +102,10 @@ export default {
       }
       return total.toFixed(3);
     },
+    //returns the difference between the drivers theoretical best time and their current fastest run
     deltaTime(driverRuns) {
-      if(!driverRuns){
-        return console.log("Driver has no runs")
+      if (!driverRuns) {
+        return console.log("Driver has no runs");
       }
       var thb = this.theoreticalBest(driverRuns);
       var finalTimes = {};
@@ -118,6 +119,12 @@ export default {
       });
       // console.log(finalTimes);
       return (finalTimes.best - thb).toFixed(3);
+    }
+  },
+  computed: {
+    //returns the competitor info from the store
+    competitors() {
+      return this.$store.state.competitors;
     }
   }
 };
