@@ -21,7 +21,7 @@ export const reportCalcs = {
           return console.log("the only run was a dnf");
         }
         if (runTimes.length >= 1) {
-          while (runTimes.includes("dnf")) {
+          while (runTimes.includes("DNF")) {
             runTimes = runTimes.sort();
             runTimes.pop();
           }
@@ -102,25 +102,25 @@ export const reportCalcs = {
           var fastestS2 = Math.min(...sector2);
           var fastest3 = Math.min(...sector3);
           sector1Fastest.push({
-            driver: competitor.Name,
-            Ftd: fastestS1,
             carNumber: competitor.Car,
+            driver: competitor.Name,
+            carModel: competitor.Make,
             class: competitor.Class,
-            carModel: competitor.Make
+            Ftd: fastestS1
           });
           sector2Fastest.push({
-            driver: competitor.Name,
-            Ftd: fastestS2,
             carNumber: competitor.Car,
+            driver: competitor.Name,
+            carModel: competitor.Make,
             class: competitor.Class,
-            carModel: competitor.Make
+            Ftd: fastestS2
           });
           sector3Fastest.push({
-            driver: competitor.Name,
-            Ftd: fastest3,
             carNumber: competitor.Car,
+            driver: competitor.Name,
+            carModel: competitor.Make,
             class: competitor.Class,
-            carModel: competitor.Make
+            Ftd: fastest3
           });
         }
       });

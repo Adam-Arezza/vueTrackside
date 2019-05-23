@@ -83,7 +83,8 @@ export default {
           if (
             keys[i] != "PaxFinal" &&
             keys[i] != "Penalty" &&
-            keys[i] != "RawFinal"
+            keys[i] != "RawFinal"&&
+            keys[i] != "PenaltyFinal"
           ) {
             // console.log(keys[i],run[keys[i]])
             if (!sectors[keys[i]]) {
@@ -118,7 +119,8 @@ export default {
         }
       });
       // console.log(finalTimes);
-      return (finalTimes.best - thb).toFixed(3);
+      var result = Number((finalTimes.best - thb).toFixed(3))
+      return result ;
     }
   },
   computed: {

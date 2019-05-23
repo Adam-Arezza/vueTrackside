@@ -91,11 +91,11 @@ export default {
       var currentRuns = this.$store.state.liveRun;
       this.competitors.forEach(competitor => {
         if (competitor.Name == this.selected[0].Name) {
-          competitor.Runs[this.runCount - 1].Final = "DNF";
+          competitor.Runs[this.runCount - 1].RawFinal = "DNF";
         }
         currentRuns.forEach(run => {
           if (run.Car == competitor.Car && run.Car == this.selected[0].Car) {
-            run.Final = "DNF";
+            run.RawFinal = "DNF";
           }
         });
       });
@@ -109,8 +109,8 @@ export default {
             competitor.Runs[
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
-            competitor.Runs[this.runCount - 1].Final =
-              competitor.Runs[this.runCount - 1].Final + 2;
+            competitor.Runs[this.runCount - 1].PenaltyFinal =
+              Number((competitor.Runs[this.runCount - 1].RawFinal + 2).toFixed(3));
           }
         });
       }
@@ -121,9 +121,8 @@ export default {
             competitor.Runs[
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
-            competitor.Runs[this.runCount - 1].Final = (
-              competitor.Runs[this.runCount - 1].Final - 2
-            ).toFixed(3);
+            competitor.Runs[this.runCount - 1].PenaltyFinal =
+              Number((competitor.Runs[this.runCount - 1].RawFinal - 2).toFixed(3));
           }
         });
       }
@@ -209,9 +208,11 @@ export default {
       sectors.forEach(sector => {
         sectorObj[sector] = 0;
       });
+      console.log(sectorObj)
       var runsObj = {
         RawFinal: 0,
         PaxFinal: 0,
+        PenaltyFinal: 0,
         Penalty: 0
       };
       // console.log(sectorObj)
@@ -220,28 +221,30 @@ export default {
       if (driver.Runs) {
         driver.Runs.push(run);
       }
+      console.log(run)
       var rawSectors = driver.rawTimes;
+      console.log(rawSectors)
       var sector = 1;
-
       if (!rawSectors || rawSectors.length < 1) {
         return;
       }
       for (var i = 0; i < rawSectors.length - 1; i++) {
         times.push((rawSectors[i + 1] - rawSectors[i]) / 1000);
       }
-      times.push((rawSectors[3] - rawSectors[0]) / 1000);
-      // console.log(driver)
+      times.push((rawSectors[rawSectors.length - 1] - rawSectors[0]) / 1000);
+      console.log(driver)
+      console.log(times)
       times.forEach(time => {
-        // console.log(time);
+        console.log(time);
         // console.log(driver);
         // console.log(driver.Runs["run" + this.runCount]);
-
+        
         //THIS CODE NEEDS  TO BE CHANGED TO ALLOW FOR ANY NUMBER OF SECTORS
-        if (sector <= 3) {
+        if (sector < times.length) {
           driver.Runs[this.runCount - 1]["Sector" + sector] = time;
           sector++;
         }
-        if (sector > 3) {
+        if (sector >= times.length) {
           driver.Runs[this.runCount - 1]["RawFinal"] = time;
         }
         //THIS CODE NEEDS  TO BE CHANGED TO ALLOW FOR ANY NUMBER OF SECTORS
@@ -269,9 +272,6 @@ export default {
       );
       this.$store.commit("updateRun", runData);
     },
-    pingBack(msg) {
-      this.$store.commit("pingBack", msg);
-    },
     //updates the global run count when all drivers have completed the current run
     newRun() {
       if (this.allDoneRun) {
@@ -295,12 +295,8 @@ export default {
         });
       });
       var result = driver.Runs[this.runCount - 1]["RawFinal"] * pax;
-      return result.toFixed(3);
+      return Number(result.toFixed(3));
     }
-  },
-  //interval for checking for arduino on ports
-  created: function() {
-    this.timer = window.setInterval(this.checkPorts, 1000);
   },
   computed: {
     //returns the competitor info from the store

@@ -37,7 +37,7 @@
             v-for="(item, index) in loadModalData"
             :key="index"
             @click="load(item)"
-          >{{dayAndTime(item.date)}}</li>
+          >{{item.date}}</li>
         </ul>
       </div>
       <div slot="modal-footer">
@@ -165,7 +165,7 @@ export default {
           data.shift();
         }
         data.push({
-          date: new Date(),
+          date: this.dayAndTime(new Date()),
           competitors: competitors,
           runCount: this.runCount,
           gates: this.gates
@@ -179,7 +179,7 @@ export default {
           "competitorData",
           JSON.stringify([
             {
-              date: new Date(),
+              date: this.dayAndTime(new Date()),
               competitors: competitors,
               runCount: this.runCount,
               gates: this.gates
