@@ -1,124 +1,59 @@
 <template>
   <div class="arduino">
-    <div id="searching" v-if="!availablePorts && getArduino.device == undefined">
+    <div id="searching" v-if="availablePorts.length == 0 && !connectionStatus">
       <p>Searching for Arduino {{dots}}</p>
     </div>
-    <div v-if="availablePorts && getArduino.device == undefined">
-      <div id="arduinoConnector">
-        <p v-if="message" id="warning">{{message}}</p>
-        <p>
-          Arduino on port:
-          {{availablePorts.comName}}
-          <button
-            id="connectBtn"
-            @click="connect(availablePorts.comName)"
-          >Connect</button>
-        </p>
+    <div v-if="availablePorts.length > 0 && !connectionStatus">
+      <div id="arduinoConnector" class="row no-gutters justify-content-end">
+        <div class="col-md-5">
+          <span>Connect to Arduino on port:</span>
+          <select v-model="selectedPort">
+            <option v-for="(port, index) in availablePorts" :key="index">{{port}}</option>
+          </select>
+          <button id="connectBtn" @click="connect(selectedPort)">Connect</button>
+        </div>
       </div>
     </div>
-    <div id="connectionMsg" v-if="getArduino.device != undefined">
-      <p>Connected to Arduino on port: {{getArduino.port}}</p>
+    <div id="connectionMsg" v-if="connectionStatus">
+      <p>Connected to Arduino on port: {{selectedPort}}</p>
     </div>
   </div>
 </template>
 <script>
 // adruinoSerial handles connecting to the main arduino and trigger events from the gate arduinos
 import SerialPort from "serialport";
-import { setInterval, clearInterval } from "timers";
 
 export default {
+  timers: {
+    checkPorts: { time: 1000, autostart: false, repeat: true }
+  },
   data() {
     return {
-      availablePorts: undefined,
+      availablePorts: [],
       selectedPort: "",
       connectionStatus: false,
-      timer: "",
       dots: ".",
-      message: ""
+      message: "",
+      arduino: undefined
     };
   },
-  created: function() {
-    this.timer = window.setInterval(this.checkPorts, 1000);
+  created() {
+    this.$timer.start("checkPorts");
   },
   methods: {
     //connects to the main arduino and handles the gate signals
     connect(port) {
-      var arduinoPort;
-      var store = this.$store;
-      var vue = this;
-      if (this.getArduino) {
-        console.log("Previously active connections: ", this.getArduino);
-        // arduinoPort = this.getArduino;
-        this.connectionStatus = true;
-      }
-      console.log("connecting to", port);
-      if (this.getArduino.device == undefined) {
-        console.log("store connection", store.state.connection);
-        arduinoPort = new SerialPort(port, {
-          baudRate: 9600
-        });
-        arduinoPort.on("error", function(err) {
-          console.log(err);
-          if (
-            err ==
-            "Error: Error: No such file or directory, cannot open /dev/ttyACM0"
-          ) {
-            vue.message = "Disconnected, please reconnect the Arduino";
-            console.log("Set error message");
-          }
-          store.commit("disconnect");
-          this.connectionStatus = false;
-          vue.startTimer;
-          return;
-        });
-        this.connectionStatus = true;
-        this.selectedPort = port;
-        var arduino = arduinoPort;
-        store.commit("newConnect", [arduino, this.selectedPort]);
-        var pingBack = this.pingBack;
-        arduinoPort.on("data", function(data) {
-          var msg = data[0];
-          console.log(data[0]);
-          switch (msg) {
-            case 48:
-              vue.$emit("gateTriggered", 0);
-              break;
-            case 49:
-              vue.$emit("gateTriggered", 1);
-              //   gateTriggered(1);
-              break;
-            case 50:
-              vue.$emit("gateTriggered", 2);
-              //   gateTriggered(2);
-              break;
-            case 51:
-              vue.$emit("gateTriggered", 3);
-              //   gateTriggered(3);
-              break;
-            case "ping1":
-              pingBack("gate1");
-              console.log("Received ping back from gate 1");
-              break;
-          }
-        });
-        arduinoPort.on("close", function() {
-          store.state.connection = {};
-          this.availablePorts = undefined;
-          this.startTimer;
-          alert("Arduino disconnected, reconnect Arduino");
-        });
-        if (this.getPing) {
-          arduinoPort.write(this.getPing.gate.toString());
-          arduinoPort.write(this.getPing.msg.toString());
-        }
-      }
+      console.log(port);
+      this.selectedPort = port;
+      this.connectionStatus = true;
+      this.arduino = new SerialPort(port, { baudRate: 9600 });
+      this.$timer.stop("checkPorts");
     },
     //checks for avilable arduino connections
     //while searching adds a waiting .... animation
     checkPorts() {
-      // console.log("Checking for ports");
+      console.log("Checking for ports");
       SerialPort.list((err, ports) => {
-        this.stopTimer();
         if (this.dots.length == 5) {
           this.dots = "";
         }
@@ -131,28 +66,42 @@ export default {
           ports.forEach(port => {
             if (port.manufacturer) {
               // console.log(port);
-              return (this.availablePorts = port);
+              if (!this.availablePorts.includes(port.comName)) {
+                this.availablePorts.push(port.comName);
+              }
             }
           });
         }
       });
     },
-    //stops the ..... animation when a connection is made to the main arduino
-    stopTimer: function() {
-      if (this.getArduino.device != undefined) {
-        window.clearInterval(this.timer);
-        console.log("Timer stopped");
-      }
+    readData(data) {
+      console.log(data);
+      this.$root.$emit("gateTrigger", data[0]);
     },
-    startTimer: function() {
-      if (this.getArduino == {}) {
-        this.timer = window.setInterval(this.checkPorts, 1000);
-      }
+    closeConnection() {
+      this.arduino = undefined;
+      this.selectedPort = "";
+      this.connectionStatus = false;
+      console.log("connection terminated");
+      alert(
+        "Arduino connection has been terminated... Please connect the Arduino"
+      );
+      this.$timer.start("checkPorts");
+    },
+    connectError(err) {
+      console.log(err);
+      alert("Something went wrong...Re-insert the Arduino cable");
     }
   },
-  computed: {
-    getArduino() {
-      return this.$store.state.connection;
+  watch: {
+    arduino: function() {
+      if (this.arduino) {
+        this.arduino.on("data", this.readData);
+        this.arduino.on("error", this.connectError);
+        this.arduino.on("close", this.closeConnection);
+      } else {
+        return console.log("No connection");
+      }
     }
   }
 };

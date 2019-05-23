@@ -1,6 +1,5 @@
 <template>
   <div class="runTable">
-    <arduinoSerial @gateTriggered="handleGates"></arduinoSerial>
     <b-button class="runBtn" size="lg" @click="stageDriver()">Stage</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(0)">Start</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(1)">G1</b-button>
@@ -33,10 +32,10 @@
 
 <script>
 //imports the arduino serial component
-import arduinoSerial from "./arduinoSerial.vue";
+// import arduinoSerial from "./arduinoSerial.vue";
 
 export default {
-  components: { arduinoSerial },
+  // components: { arduinoSerial },
   props: {
     liveRun: Array,
     selectedDriver: "",
@@ -109,8 +108,9 @@ export default {
             competitor.Runs[
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
-            competitor.Runs[this.runCount - 1].PenaltyFinal =
-              Number((competitor.Runs[this.runCount - 1].RawFinal + 2).toFixed(3));
+            competitor.Runs[this.runCount - 1].PenaltyFinal = Number(
+              (competitor.Runs[this.runCount - 1].RawFinal + 2).toFixed(3)
+            );
           }
         });
       }
@@ -121,15 +121,13 @@ export default {
             competitor.Runs[
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
-            competitor.Runs[this.runCount - 1].PenaltyFinal =
-              Number((competitor.Runs[this.runCount - 1].RawFinal - 2).toFixed(3));
+            competitor.Runs[this.runCount - 1].PenaltyFinal = Number(
+              (competitor.Runs[this.runCount - 1].RawFinal - 2).toFixed(3)
+            );
           }
         });
       }
       // console.log("After penalties: ", this.competitors);
-    },
-    handleGates(gate) {
-      this.gateTriggered(gate);
     },
     //adds a competitor to the staged list in the store
     //competitor at starting line
@@ -208,7 +206,7 @@ export default {
       sectors.forEach(sector => {
         sectorObj[sector] = 0;
       });
-      console.log(sectorObj)
+      console.log(sectorObj);
       var runsObj = {
         RawFinal: 0,
         PaxFinal: 0,
@@ -221,9 +219,9 @@ export default {
       if (driver.Runs) {
         driver.Runs.push(run);
       }
-      console.log(run)
+      console.log(run);
       var rawSectors = driver.rawTimes;
-      console.log(rawSectors)
+      console.log(rawSectors);
       var sector = 1;
       if (!rawSectors || rawSectors.length < 1) {
         return;
@@ -232,13 +230,13 @@ export default {
         times.push((rawSectors[i + 1] - rawSectors[i]) / 1000);
       }
       times.push((rawSectors[rawSectors.length - 1] - rawSectors[0]) / 1000);
-      console.log(driver)
-      console.log(times)
+      console.log(driver);
+      console.log(times);
       times.forEach(time => {
         console.log(time);
         // console.log(driver);
         // console.log(driver.Runs["run" + this.runCount]);
-        
+
         //THIS CODE NEEDS  TO BE CHANGED TO ALLOW FOR ANY NUMBER OF SECTORS
         if (sector < times.length) {
           driver.Runs[this.runCount - 1]["Sector" + sector] = time;
@@ -312,9 +310,9 @@ export default {
       return this.$store.state.gates;
     },
     //returns the current arduino connection object
-    getArduino() {
-      return this.$store.state.connection;
-    },
+    // getArduino() {
+    //   return this.$store.state.connection;
+    // },
     getPing() {
       return this.$store.state.pingToGate;
     },
@@ -322,6 +320,26 @@ export default {
     classList() {
       return this.$store.state.classList;
     }
+  },
+  mounted() {
+    this.$root.$on("gateTrigger", data => {
+      console.log("Data recieved by runtable from arduino");
+      console.log(data)
+        switch (data) {
+          case 48:
+            this.gateTriggered(0)
+            break;
+          case 49:
+            this.gateTriggered(1)
+            break;
+          case 50:
+            this.gateTriggered(2)
+            break;
+          case 51:
+            this.gateTriggered(3)
+            break;
+        }
+    });
   }
 };
 </script>

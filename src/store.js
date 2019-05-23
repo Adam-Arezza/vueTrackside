@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import ClassPax from './classes'
+import SerialPort from 'serialport'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
     competitors: [],
-    connection: {},
     liveRun:[],
     staged: [],
     gates: {},
@@ -17,10 +17,6 @@ export default new Vuex.Store({
   mutations: {
     importList(state, list){
       state.competitors = list
-    },
-    newConnect(state,device){
-      state.connection = {"device": device[0], "port": device[1]}
-      console.log(state.connection)
     },
     updateRun(state, run){
       state.liveRun.push(run)
@@ -38,9 +34,6 @@ export default new Vuex.Store({
     setGates(state, num) {
       state.gates = num
       console.log("gates at the store: ", state.gates)
-    },
-    disconnect(state) {
-      state.connection = {}
     }
   }
 })
