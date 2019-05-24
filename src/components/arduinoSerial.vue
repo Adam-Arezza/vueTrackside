@@ -20,7 +20,6 @@
   </div>
 </template>
 <script>
-// adruinoSerial handles connecting to the main arduino and trigger events from the gate arduinos
 import SerialPort from "serialport";
 
 export default {
@@ -37,11 +36,17 @@ export default {
       arduino: undefined
     };
   },
+  //starts a timer upon created hook
+  //checkports will look for available connections to the serialport
   created() {
     this.$timer.start("checkPorts");
   },
   methods: {
-    //connects to the main arduino and handles the gate signals
+    //connects to the main arduino on 'port'
+    //changes the property connectionStatus to true
+    //changes the property selectedPort to port
+    //creates a serialport instance and assigns to the arduino property
+    //stops the checkports timer
     connect(port) {
       console.log(port);
       this.selectedPort = port;
@@ -49,8 +54,9 @@ export default {
       this.arduino = new SerialPort(port, { baudRate: 9600 });
       this.$timer.stop("checkPorts");
     },
-    //checks for avilable arduino connections
+    //checks for avilable serialport connections
     //while searching adds a waiting .... animation
+    //adds any avilable ocnnections to the availablePorts property
     checkPorts() {
       console.log("Checking for ports");
       SerialPort.list((err, ports) => {
@@ -74,10 +80,15 @@ export default {
         }
       });
     },
+    //When the ardiuno serialport instance recieves any data an event is emitted
+    //$root events can be accessed by any other component
     readData(data) {
       console.log(data);
       this.$root.$emit("gateTrigger", data[0]);
     },
+    //Changes the properties when the serialport connection is terminated
+    //alerts the user that the connection is lost
+    //starts the timer for checkports
     closeConnection() {
       this.arduino = undefined;
       this.selectedPort = "";
@@ -88,12 +99,15 @@ export default {
       );
       this.$timer.start("checkPorts");
     },
+    //If an error occurs when connecting the error is logged and the user instructed to re-insert the cable
     connectError(err) {
       console.log(err);
       alert("Something went wrong...Re-insert the Arduino cable");
     }
   },
   watch: {
+    //When an event occurs on the adruino serialport instance the appropriate handler is called
+    //If no arduino connection exists logs message to the console
     arduino: function() {
       if (this.arduino) {
         this.arduino.on("data", this.readData);

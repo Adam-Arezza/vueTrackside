@@ -6,6 +6,7 @@
         <b-dropdown-item @click="exportData()">Export to spreadsheet</b-dropdown-item>
         <b-dropdown-item @click="saveToLocal()">Save</b-dropdown-item>
         <b-dropdown-item @click="loadModal()">Load</b-dropdown-item>
+        <b-dropdown-item @click="openSettings()">Settings</b-dropdown-item>
         <b-dropdown-item @click="shutDown()">Close</b-dropdown-item>
       </b-dropdown>
       <b-button v-bind:class="{disabled: disabledLink}">
@@ -33,16 +34,28 @@
       </p>
       <div>
         <ul>
-          <li
-            v-for="(item, index) in loadModalData"
-            :key="index"
-            @click="load(item)"
-          >{{item.date}}</li>
+          <li v-for="(item, index) in loadModalData" :key="index" @click="load(item)">{{item.date}}</li>
         </ul>
       </div>
       <div slot="modal-footer">
         <b-button @click="closeModal('load-modal')">Close</b-button>
       </div>
+    </b-modal>
+    <b-modal
+      ref="settings-modal"
+      id="settings"
+      title="Settings"
+      :header-bg-variant="'dark'"
+      :header-border-variant="'primary'"
+    >
+    <div>
+    <span v-if="autoSave">Auto-save:  ON </span> <span v-if="!autoSave">Auto-save: OFF</span>
+      <b-form-checkbox switch v-model="autoSave">
+      </b-form-checkbox>
+    </div>
+      <span v-if="saveAfterRun">Save on each run:  ON </span> <span v-if="!saveAfterRun">Save on each run OFF</span>
+      <b-form-checkbox switch v-model="saveAfterRun">
+      </b-form-checkbox>
     </b-modal>
   </div>
   <!-- <router-view/> -->
@@ -50,13 +63,13 @@
 <script>
 // topNav component handles application navigation via vueRouter
 // handles import, save, load and export functions of the application
-import fs from "fs";
+import fs, { truncate } from "fs";
 import XLSX from "xlsx";
 import { reportCalcs } from "../mixins/reportCalcs";
 const { dialog } = require("electron").remote;
 const remote = require("electron").remote;
 
-//returns JSON of competitors given a CSV file
+//returns JSON given a CSV file
 function csvJson(csv) {
   var competitors = [];
   var rows = csv.split("\n");
@@ -74,19 +87,31 @@ function csvJson(csv) {
 
 export default {
   mixins: [reportCalcs],
+  timers: {
+    save: { autostart: false, repeat: true, time: 60000 }
+  },
   data() {
     return {
       loadModalData: [],
-      compList: this.competitors
+      // compList: this.competitors
+      autoSave: false,
+      saveAfterRun: false,
+      autoSaveTimer: 60000
+      // switch1:false
     };
   },
   methods: {
-    //activates the export data modal and loads localstorage data for selection
+    save() {
+      this.saveToLocal();
+    },
+    openSettings() {
+      this.$refs["settings-modal"].show();
+    },
     //closes the modal
     closeModal(modal) {
       this.$refs[modal].hide();
     },
-    //returns a formatted date and time of an event from the date object saved to the event
+    //returns a formatted date and time of an autox event from a passed in date object
     //format: day, month, day(number), hour:minute
     dayAndTime(date) {
       var months = [
@@ -122,7 +147,7 @@ export default {
         mins
       );
     },
-    //opens a filesystem dialog for opening a selected CSV file
+    //opens a filesystem dialog for opening a selected (CSV) file
     //saves the competitor list as JSON to the store
     importCsv() {
       var store = this.$store;
@@ -152,16 +177,15 @@ export default {
         }
       });
     },
-    //creates a new save in the localstorage
+    //creates a new save instance in the localstorage
     saveToLocal() {
       var competitors = this.$store.state.competitors;
       var newData;
       if (localStorage.getItem("competitorData")) {
-        // alert("overwriting previous saved data!");
         var data = JSON.parse(localStorage.getItem("competitorData"));
         localStorage.removeItem("competitorData");
-        console.log(data);
-        if (data.length > 20) {
+        // console.log(data);
+        if (data.length > 100) {
           data.shift();
         }
         data.push({
@@ -171,9 +195,6 @@ export default {
           gates: this.gates
         });
         localStorage.setItem("competitorData", JSON.stringify(data));
-        // var data = JSON.parse(localStorage.getItem("competitorData"));
-        // var date = new Date(data.date).toString();
-        // console.log(date);
       } else {
         localStorage.setItem(
           "competitorData",
@@ -200,24 +221,22 @@ export default {
         this.loadModalData = competitorData;
       }
     },
-    //loads the selected save data into the store
+    //loads the passed in save data into the store
     load(data) {
       var competitors = data.competitors;
       var runCount = data.runCount;
-      // console.log(data.competitors);
       this.$store.commit("importList", competitors);
-      // console.log(this.$store.state.competitors);
       this.$store.state.runCount = runCount;
       this.$store.state.gates = data.gates;
       this.closeModal("load-modal");
     },
     //exports the selected data into a tabbed spreadsheet with Ftd data (overall, pax, sectors, classes)
     exportData() {
-      if(this.competitors.length == 0){
-        return alert("No data, please load data before export")
+      if (this.competitors.length == 0) {
+        return alert("No data, please load data before export");
       }
-      if(this.runCount <= 1){
-        return alert("All runs must be complete before export")
+      if (this.runCount <= 1) {
+        return alert("All runs must be complete before export");
       }
       //formatting the output of GetOverallFtd() for the spreadshseet
       var overallData = this.GetOverallFtd().sort((a, b) =>
@@ -273,13 +292,14 @@ export default {
           sectorFtdData.push(Object.values(sectorData[sector][i]));
         }
       });
+      //formatting pax ftd data for spreadsheet
       var paxData = this.paxCalcs();
       paxData = paxData.sort((a, b) => (a.paxTime < b.paxTime ? -1 : 1));
       paxData.forEach(driver => {
         driver.class = driver.class[1];
       });
 
-      //starting a new workbook
+      //starting a new workbook (excel)
       var wb = XLSX.utils.book_new();
       wb.Props = {
         Title: "Trackside Data",
@@ -290,6 +310,8 @@ export default {
       //giving the workbook first sheet name
       var vue = this;
       wb.SheetNames.push("FTD-Raw");
+      //opening a file system save dialog for saving the excel workbook
+      //adds the data and worksheets to the workbook and saves in xlsx format
       dialog.showSaveDialog(function(filename) {
         if (filename) {
           console.log(filename);
@@ -307,21 +329,29 @@ export default {
             XLSX.writeFile(wb, filename + ".xlsx");
           }
 
-          console.log("Exporting all current data to spreadsheet");
+          // console.log("Exporting all current data to spreadsheet");
+          alert("Export Successful");
         } else {
-          console.log("no file");
+          // console.log("no file");
+          alert("No file selected, export terminated...");
         }
       });
     },
     //closes the application
     shutDown() {
+      try {
+        this.saveToLocal();
+      } catch (err) {
+        console.log(err);
+      }
       var w = remote.getCurrentWindow();
       w.close();
     }
   },
   computed: {
+    //returns the competitor list data
     competitors() {
-      return this.$store.state.competitors
+      return this.$store.state.competitors;
     },
     //returns the list of staged/running competitors
     stagedList() {
@@ -344,6 +374,25 @@ export default {
     //returns the number of gates from the store
     gates() {
       return this.$store.state.gates;
+    },
+    liveRun() {
+      return this.$store.state.liveRun
+    }
+  },
+  watch: {
+    autoSave: function() {
+      if(this.autoSave == true) {
+        this.timers.save.time = this.autoSaveTimer
+        this.$timer.start('save')
+      }
+      else {
+        this.$timer.stop('save')
+      }
+    },
+    liveRun: function() {
+      if(this.saveAfterRun == true) {
+        this.saveToLocal()
+      }
     }
   }
 };

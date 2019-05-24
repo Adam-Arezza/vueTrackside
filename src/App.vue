@@ -7,6 +7,7 @@
 </template>
 <script>
 //imports the navigation bar component
+//imports the arduinoSerial component
 import topNav from "./components/topNav.vue";
 import arduinoSerial from "./components/arduinoSerial.vue"
 
