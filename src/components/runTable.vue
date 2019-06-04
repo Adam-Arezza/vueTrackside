@@ -24,6 +24,7 @@
         striped
         :fields="fields"
         :items="liveRun"
+        small
         @row-selected="rowSelected"
       ></b-table>
     </div>
@@ -350,5 +351,12 @@ p {
 }
 .runBtn {
   margin: 2px;
+  border-radius: 0px;
+  background: #82d661;
+  color: black;
+}
+.runBtn:hover {
+  background: #6fb454;
+  color: black;
 }
 </style>

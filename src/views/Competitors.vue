@@ -1,6 +1,6 @@
 <template>
   <div class="competitors">
-    <b-table dark small striped :items="competitors" :fields="fields">
+    <b-table small striped :items="competitors" :fields="fields">
       <template slot="show_details" slot-scope="row">
         <b-button
           size="sm"
@@ -9,49 +9,51 @@
         >{{row.detailsShowing ? 'Hide' : 'Show'}} Details</b-button>
       </template>
       <template slot="row-details" slot-scope="row">
-        <b-card bg-variant="dark" class="infoCard">
-          <b-row class="info" no-gutters>
-            <div class="col-sm-5 driverInfo">
-              <p>
-                <strong>Make:</strong>
-                {{row.item.Make}}
-              </p>
-              <p>
-                <strong>Model:</strong>
-                {{row.item.Model}}
-              </p>
-              <p>
-                <strong>Year:</strong>
-                {{row.item.Year}}
-              </p>
-              <p>
-                <strong>Tire:</strong>
-                {{row.item.Tire}}
-              </p>
-              <p class="specialTimes">
-                <strong>Theoretical Best:</strong>
-                {{theoreticalBest(row.item.Runs)}}
-              </p>
-              <p class="specialTimes">
-                <strong>Delta:</strong>
-                {{deltaTime(row.item.Runs)}}
-              </p>
-            </div>
-            <div class="col-sm-5 runInfo">
-              <!-- <p>{{JSON.stringify(row.item.Runs)}}</p> -->
-              <div v-for="(run, index) in row.item.Runs" :key="index">
+        <b-row class="info" no-gutters align-v="start" align-h="center">
+          <b-col class="driverInfo" md="2">
+            <p>
+              <strong>Make:</strong>
+              {{row.item.Make}}
+            </p>
+            <p>
+              <strong>Model:</strong>
+              {{row.item.Model}}
+            </p>
+            <p>
+              <strong>Year:</strong>
+              {{row.item.Year}}
+            </p>
+            <p>
+              <strong>Tire:</strong>
+              {{row.item.Tire}}
+            </p>
+          </b-col>
+          <b-col md="2">
+            <p>
+              <strong>Theoretical Best:</strong>
+              {{theoreticalBest(row.item.Runs)}}
+            </p>
+            <p>
+              <strong>Delta:</strong>
+              {{deltaTime(row.item.Runs)}}
+            </p>
+          </b-col>
+          <b-col md="8" class="runInfo">
+            <!-- <p>{{JSON.stringify(row.item.Runs)}}</p> -->
+            <b-row v-for="(run, index) in row.item.Runs" :key="index">
+              <b-col md="12">
                 <h5>{{("Run" +(index+1))}}</h5>
-                <div v-for="(item, heading) in run" :key="heading">
-                  <p>
-                    <strong>{{heading }}:</strong>
-                    {{item}}
-                  </p>
+              </b-col>
+              <b-col v-for="(item, heading) in run" :key="heading">
+                <div class="header">
+                  <strong>{{heading}}</strong>
                 </div>
-              </div>
-            </div>
-          </b-row>
-          <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
-        </b-card>
+                <div class="data">{{item}}</div>
+              </b-col>
+            </b-row>
+          </b-col>
+        </b-row>
+        <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
       </template>
     </b-table>
   </div>
@@ -83,7 +85,7 @@ export default {
           if (
             keys[i] != "PaxFinal" &&
             keys[i] != "Penalty" &&
-            keys[i] != "RawFinal"&&
+            keys[i] != "RawFinal" &&
             keys[i] != "PenaltyFinal"
           ) {
             // console.log(keys[i],run[keys[i]])
@@ -119,8 +121,8 @@ export default {
         }
       });
       // console.log(finalTimes);
-      var result = Number((finalTimes.best - thb).toFixed(3))
-      return result ;
+      var result = Number((finalTimes.best - thb).toFixed(3));
+      return result;
     }
   },
   computed: {
@@ -155,16 +157,12 @@ h5 {
   text-align: left;
   margin: 15px;
 }
-.specialTimes {
-  display: flex;
-  background: lightblue;
-  color: black;
-  font-size: 1.3rem;
-  justify-self: end;
-  width: 50%;
-}
 .info {
   justify-content: center;
   align-items: center;
+}
+.header, .data {
+  margin: 5px;
+  padding: 5px;
 }
 </style>

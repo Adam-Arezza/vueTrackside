@@ -13,7 +13,13 @@ export const reportCalcs = {
         var fastestRun;
         if (competitor.Runs) {
           Object.keys(competitor.Runs).forEach(run => {
-            runTimes.push(competitor.Runs[run].RawFinal);
+            // console.log(competitor.Runs[run])
+            if (competitor.Runs[run].PenaltyFinal == 0) {
+              runTimes.push(competitor.Runs[run].RawFinal);
+            }
+            else {
+              runTimes.push(competitor.Runs[run].PenaltyFinal)
+            }
           });
         }
 
@@ -27,8 +33,8 @@ export const reportCalcs = {
           }
           fastestTime = Math.min(...runTimes);
           Object.keys(competitor.Runs).forEach(run => {
-            if (competitor.Runs[run].RawFinal == fastestTime) {
-
+            
+            if (competitor.Runs[run].RawFinal == fastestTime || competitor.Runs[run].PenaltyFinal == fastestTime) {
               fastestRun = Number(run) + 1;
             }
           });
@@ -37,7 +43,6 @@ export const reportCalcs = {
               if (competitor.Class == subclass.class) {
                 compClass.push(classes[i].class);
                 compClass.push(subclass.class);
-
               }
             });
           }
@@ -135,7 +140,7 @@ export const reportCalcs = {
       overallData.forEach(driver => {
         classList.forEach(c => {
           c.subClasses.forEach(subclass => {
-            if(subclass.class == driver.class[1]){
+            if (subclass.class == driver.class[1]) {
               driver.paxTime = driver.Ftd * subclass.pax
               driver.paxTime = Number(driver.paxTime.toFixed(3))
             }

@@ -124,9 +124,13 @@ export default {
   text-align: center;
 }
 .collapseBtn {
-  width: 95%;
-  margin: 3px;
+  width: 100%;
+  padding: 0px;
+  border: solid black 1px;
+  margin-top: 3px;
+  margin-bottom: 3px;
   font-size: 20px !important;
+  border-radius: 0px !important;
 }
 h4 {
   background: rgb(20, 20, 20);
