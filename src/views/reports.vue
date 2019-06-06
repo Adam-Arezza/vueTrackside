@@ -131,6 +131,8 @@ export default {
   margin-bottom: 3px;
   font-size: 20px !important;
   border-radius: 0px !important;
+  background: #82d661 !important;
+  color: black !important;
 }
 h4 {
   background: rgb(20, 20, 20);

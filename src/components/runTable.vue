@@ -4,7 +4,8 @@
     <b-button class="runBtn" size="lg" @click="gateTriggered(0)">Start</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(1)">G1</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(2)">G2</b-button>
-    <b-button class="runBtn" size="lg" @click="gateTriggered(3)">End</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(3)">G3</b-button>
+    <b-button class="runBtn" size="lg" @click="gateTriggered(4)">End</b-button>
     <b-button class="runBtn" size="lg" @click="newRun()">Run Complete</b-button>
     <div>
       <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
@@ -14,9 +15,20 @@
         <button @click="dnf">DNF</button>
       </b-modal>
     </div>
-    <h3>Run{{runCount}}</h3>
-
-    <div class="row no-gutters">
+    <div v-if="Object.keys(getGates).length == 0" class="container-fluid gatesSetup">
+      <p>Select the total number of gates for the session including start and finish gates.</p>
+      <b-row no-gutters>
+        <b-col md="8">
+          <b-form-group>
+            <b-form-radio-group v-model="selectedGates" :options="options"></b-form-radio-group>
+          </b-form-group>
+          <p>Number of gates: {{selectedGates}}</p>
+          <b-button @click="generateGates()" size="lg">Set</b-button>
+        </b-col>
+      </b-row>
+    </div>
+    <div v-if="Object.keys(getGates).length > 1" class="row no-gutters">
+      <h3>Run{{runCount}}</h3>
       <b-table
         selectable
         hover
@@ -44,25 +56,31 @@ export default {
   },
   data() {
     return {
-      fields: [
-        "Car",
-        "Name",
-        "Make",
-        "Sector1",
-        "Sector2",
-        "Sector3",
-        "RawFinal",
-        "PaxFinal",
-        "Penalty"
-      ],
+      fields: ["Car", "Name", "Make", "RawFinal", "PaxFinal", "Penalty"],
       penalty: 0,
       single: "single",
       selected: [],
       previous: [],
-      tableTest: "someHeader"
+      tableTest: "someHeader",
+      selectedGates: 0,
+      options: [
+        { text: "2 gates", value: 2 },
+        { text: "3 gates", value: 3 },
+        { text: "4 gates", value: 4 },
+        { text: "5 gates", value: 5 }
+      ],
+      gateResponse: ""
     };
   },
   methods: {
+    generateGates() {
+      var gates = {};
+      var numberOfGates = this.gateNumber;
+      for (var i = 0; i < numberOfGates; i++) {
+        gates[i] = [];
+      }
+      this.$store.commit("setGates", gates);
+    },
     //opens the penalties modal on driver selection
     rowSelected(items) {
       if (items.length > 0) {
@@ -320,27 +338,68 @@ export default {
     //returns the classlist from the store
     classList() {
       return this.$store.state.classList;
+    },
+    gateNumber() {
+      // console.log(this.selected);
+      return this.selectedGates;
     }
   },
   mounted() {
     this.$root.$on("gateTrigger", data => {
       console.log("Data recieved by runtable from arduino");
-      console.log(data)
-        switch (data) {
-          case 48:
-            this.gateTriggered(0)
-            break;
-          case 49:
-            this.gateTriggered(1)
-            break;
-          case 50:
-            this.gateTriggered(2)
-            break;
-          case 51:
-            this.gateTriggered(3)
-            break;
-        }
+      console.log(data);
+      switch (data) {
+        case 48:
+          this.gateTriggered(0);
+          break;
+        case 49:
+          this.gateTriggered(1);
+          break;
+        case 50:
+          this.gateTriggered(2);
+          break;
+        case 51:
+          this.gateTriggered(3);
+          break;
+        case 52:
+          this.gateTriggered(4);
+          break;
+      }
     });
+  },
+  watch: {
+    getGates() {
+      if (Object.keys(this.getGates).length > 0) {
+        console.log("gates value has increased");
+        var sectors = [];
+        var gates = Object.keys(this.getGates);
+        gates.shift();
+        gates.forEach(gate => {
+          sectors.push("Sector" + gate);
+        });
+        console.log(sectors);
+        sectors.reverse();
+        sectors.forEach(sector => {
+          this.fields.splice(3, 0, sector);
+        });
+      }
+    }
+  },
+  created() {
+    if (Object.keys(this.getGates).length > 0) {
+      console.log("gates value has increased");
+      var sectors = [];
+      var gates = Object.keys(this.getGates);
+      gates.shift();
+      gates.forEach(gate => {
+        sectors.push("Sector" + gate);
+      });
+      console.log(sectors);
+      sectors.reverse();
+      sectors.forEach(sector => {
+        this.fields.splice(3, 0, sector);
+      });
+    }
   }
 };
 </script>

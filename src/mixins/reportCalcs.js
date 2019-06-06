@@ -33,7 +33,7 @@ export const reportCalcs = {
           }
           fastestTime = Math.min(...runTimes);
           Object.keys(competitor.Runs).forEach(run => {
-            
+
             if (competitor.Runs[run].RawFinal == fastestTime || competitor.Runs[run].PenaltyFinal == fastestTime) {
               fastestRun = Number(run) + 1;
             }
@@ -86,53 +86,48 @@ export const reportCalcs = {
       return result;
     },
     //returns the fastest sector times for each sector
+    //NEED TO FIX TO ALLOW FOR ANY NUMBER OF SECTORS
     getSectorFtd() {
       var competitors = store.state.competitors
-      var result = [];
-      var sector1Fastest = [];
-      var sector2Fastest = [];
-      var sector3Fastest = [];
+      var fastest = []
       competitors.forEach(competitor => {
-        var sector1 = [];
-        var sector2 = [];
-        var sector3 = [];
-        if (competitor.Runs) {
-          Object.keys(competitor.Runs).forEach(run => {
-            var sectors = Object.keys(competitor.Runs[run]);
-            sector1.push(competitor.Runs[run][sectors[0]]).toFixed(3);
-            sector2.push(competitor.Runs[run][sectors[1]]).toFixed(3);
-            sector3.push(competitor.Runs[run][sectors[2]]).toFixed(3);
-          });
-          var fastestS1 = Math.min(...sector1);
-          var fastestS2 = Math.min(...sector2);
-          var fastest3 = Math.min(...sector3);
-          sector1Fastest.push({
+        var sectors = []
+        competitor.Runs.forEach(run => {
+          var runKeys = Object.keys(run)
+          for (var i = 0; i < runKeys.length; i++) {
+            if (runKeys[i] != "RawFinal" && runKeys[i] != "PenaltyFinal" && runKeys[i] != "Penalty" && runKeys[i] != "PaxFinal") {
+              // console.log(runKeys[i])
+              // console.log(run[runKeys[i]])
+              if (!sectors[i]) {
+                sectors.push(run[runKeys[i]])
+              }
+              else {
+                if (sectors[i] > run[runKeys[i]]) {
+                  sectors[i] = run[runKeys[i]]
+                }
+              }
+            }
+          }
+        })
+        // console.log(sectors.length)
+        for (var n = 0; n < sectors.length; n++) {
+          if (fastest.length != sectors.length) {
+            fastest.push([])
+          }
+          fastest[n].push({
             carNumber: competitor.Car,
             driver: competitor.Name,
             carModel: competitor.Make,
             class: competitor.Class,
-            Ftd: fastestS1
-          });
-          sector2Fastest.push({
-            carNumber: competitor.Car,
-            driver: competitor.Name,
-            carModel: competitor.Make,
-            class: competitor.Class,
-            Ftd: fastestS2
-          });
-          sector3Fastest.push({
-            carNumber: competitor.Car,
-            driver: competitor.Name,
-            carModel: competitor.Make,
-            class: competitor.Class,
-            Ftd: fastest3
-          });
+            Ftd: sectors[n]
+          })
         }
       });
-      result.push(sector1Fastest, sector2Fastest, sector3Fastest);
-      console.log(result)
-      return result;
+      console.log(fastest)
+      return fastest
     },
+    // result.push(sector1Fastest, sector2Fastest, sector3Fastest);
+
     paxCalcs() {
       var result = []
       var overallData = this.GetOverallFtd()
