@@ -110,16 +110,18 @@ export default {
       this.competitors.forEach(competitor => {
         if (competitor.Name == this.selected[0].Name) {
           competitor.Runs[this.runCount - 1].RawFinal = "DNF";
+          this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]]) // see if this modifies the liveRun
         }
-        currentRuns.forEach(run => {
-          if (run.Car == competitor.Car && run.Car == this.selected[0].Car) {
-            run.RawFinal = "DNF";
-          }
-        });
+        // currentRuns.forEach(run => {
+        //   if (run.Car == competitor.Car && run.Car == this.selected[0].Car) {
+        //     run.RawFinal = "DNF";
+        //   }
+        // });
       });
     },
     //handles penalty calculation and updates the store for a competitor
     handlePenalties(operation) {
+      var currentRuns = this.$store.state.liveRun;
       if (operation == "add") {
         this.addCone();
         this.competitors.forEach(competitor => {
@@ -128,8 +130,20 @@ export default {
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
             competitor.Runs[this.runCount - 1].PenaltyFinal = Number(
-              (competitor.Runs[this.runCount - 1].RawFinal + 2).toFixed(3)
+              (
+                competitor.Runs[this.runCount - 1].RawFinal +
+                2 * this.selected[0].Penalty
+              ).toFixed(3)
             );
+            // currentRuns.forEach(run => {
+            //   if (
+            //     run.Car == competitor.Car &&
+            //     run.Car == this.selected[0].Car
+            //   ) {
+            //     run.PenaltyFinal = competitor.Runs[this.runCount - 1].PenaltyFinal
+            //   }
+            // });
+            this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]])
           }
         });
       }
@@ -140,9 +154,26 @@ export default {
             competitor.Runs[
               this.runCount - 1
             ].Penalty = this.selected[0].Penalty;
-            competitor.Runs[this.runCount - 1].PenaltyFinal = Number(
-              (competitor.Runs[this.runCount - 1].RawFinal - 2).toFixed(3)
-            );
+            if (this.selected[0].Penalty == 0) {
+              competitor.Runs[this.runCount - 1].PenaltyFinal = 0;
+            } else {
+              competitor.Runs[this.runCount - 1].PenaltyFinal = Number(
+                (
+                  competitor.Runs[this.runCount - 1].PenaltyFinal -
+                  2 * this.selected[0].Penalty
+                ).toFixed(3)
+              );
+            }
+
+            // currentRuns.forEach(run => {
+            //   if (
+            //     run.Car == competitor.Car &&
+            //     run.Car == this.selected[0].Car
+            //   ) {
+            //     run.PenaltyFinal = competitor.Runs[this.runCount - 1].PenaltyFinal
+            //   }
+            // });
+            this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]])
           }
         });
       }
@@ -278,7 +309,8 @@ export default {
       var extraParams = {
         Car: driver.Car,
         Name: driver.Name,
-        Make: driver.Make
+        Make: driver.Make,
+        runNum: this.runCount //added for run identifier when sending to express app
       };
 
       var runData = { ...run, ...extraParams };

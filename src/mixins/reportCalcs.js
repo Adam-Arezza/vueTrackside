@@ -92,23 +92,28 @@ export const reportCalcs = {
       var fastest = []
       competitors.forEach(competitor => {
         var sectors = []
-        competitor.Runs.forEach(run => {
-          var runKeys = Object.keys(run)
-          for (var i = 0; i < runKeys.length; i++) {
-            if (runKeys[i] != "RawFinal" && runKeys[i] != "PenaltyFinal" && runKeys[i] != "Penalty" && runKeys[i] != "PaxFinal") {
-              // console.log(runKeys[i])
-              // console.log(run[runKeys[i]])
-              if (!sectors[i]) {
-                sectors.push(run[runKeys[i]])
-              }
-              else {
-                if (sectors[i] > run[runKeys[i]]) {
-                  sectors[i] = run[runKeys[i]]
+        if(competitor.Runs){
+          competitor.Runs.forEach(run => {
+            var runKeys = Object.keys(run)
+            for (var i = 0; i < runKeys.length; i++) {
+              if (runKeys[i] != "RawFinal" && runKeys[i] != "PenaltyFinal" && runKeys[i] != "Penalty" && runKeys[i] != "PaxFinal") {
+                // console.log(runKeys[i])
+                // console.log(run[runKeys[i]])
+                if (!sectors[i]) {
+                  sectors.push(run[runKeys[i]])
+                }
+                else {
+                  if (sectors[i] > run[runKeys[i]]) {
+                    sectors[i] = run[runKeys[i]]
+                  }
                 }
               }
             }
-          }
-        })
+          })
+        }
+        else{
+          return
+        }
         // console.log(sectors.length)
         for (var n = 0; n < sectors.length; n++) {
           if (fastest.length != sectors.length) {
