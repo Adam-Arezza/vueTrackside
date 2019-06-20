@@ -1,5 +1,6 @@
 <template>
   <div class="runTable">
+    <b-button-group v-if="Object.keys(getGates).length > 1">
     <b-button class="runBtn" size="lg" @click="stageDriver()">Stage</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(0)">Start</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(1)">G1</b-button>
@@ -7,6 +8,7 @@
     <b-button class="runBtn" size="lg" @click="gateTriggered(3)">G3</b-button>
     <b-button class="runBtn" size="lg" @click="gateTriggered(4)">End</b-button>
     <b-button class="runBtn" size="lg" @click="newRun()">Run Complete</b-button>
+    </b-button-group>
     <div>
       <!-- <button v-b-modal.penalty> 0">Penalties</button> -->
       <b-modal ref="penaltyModal" id="penalty">
@@ -16,13 +18,13 @@
       </b-modal>
     </div>
     <div v-if="Object.keys(getGates).length == 0" class="container-fluid gatesSetup">
-      <p>Select the total number of gates for the session including start and finish gates.</p>
-      <b-row no-gutters>
-        <b-col md="8">
+      <p>How many gates will this event have? (include start and finish gates)</p>
+      <b-row no-gutters align-h="center">
+        <b-col>
           <b-form-group>
             <b-form-radio-group v-model="selectedGates" :options="options"></b-form-radio-group>
           </b-form-group>
-          <p>Number of gates: {{selectedGates}}</p>
+          <!-- <p>Number of gates: {{selectedGates}}</p> -->
           <b-button @click="generateGates()" size="lg">Set</b-button>
         </b-col>
       </b-row>
@@ -110,7 +112,10 @@ export default {
       this.competitors.forEach(competitor => {
         if (competitor.Name == this.selected[0].Name) {
           competitor.Runs[this.runCount - 1].RawFinal = "DNF";
-          this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]]) // see if this modifies the liveRun
+          this.$store.commit("modifyRun", [
+            competitor.Car,
+            competitor.Runs[this.runCount - 1]
+          ]); // see if this modifies the liveRun
         }
         // currentRuns.forEach(run => {
         //   if (run.Car == competitor.Car && run.Car == this.selected[0].Car) {
@@ -143,7 +148,10 @@ export default {
             //     run.PenaltyFinal = competitor.Runs[this.runCount - 1].PenaltyFinal
             //   }
             // });
-            this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]])
+            this.$store.commit("modifyRun", [
+              competitor.Car,
+              competitor.Runs[this.runCount - 1]
+            ]);
           }
         });
       }
@@ -173,7 +181,10 @@ export default {
             //     run.PenaltyFinal = competitor.Runs[this.runCount - 1].PenaltyFinal
             //   }
             // });
-            this.$store.commit('modifyRun', [competitor.Car, competitor.Runs[this.runCount - 1]])
+            this.$store.commit("modifyRun", [
+              competitor.Car,
+              competitor.Runs[this.runCount - 1]
+            ]);
           }
         });
       }
@@ -439,6 +450,7 @@ export default {
 <style scoped>
 p {
   text-align: left;
+  font-size: 1.25em;
 }
 .runBtn {
   margin: 2px;

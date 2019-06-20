@@ -16,9 +16,6 @@
         <router-link to="/competitors">Competitors</router-link>
       </b-button>
       <b-button v-bind:class="{disabled: disabledLink}">
-        <router-link to="/gates">Gates</router-link>
-      </b-button>
-      <b-button v-bind:class="{disabled: disabledLink}">
         <router-link to="/reports">Reports</router-link>
       </b-button>
     </b-button-group>
@@ -48,14 +45,6 @@
       :header-bg-variant="'dark'"
       :header-border-variant="'primary'"
     >
-    <div>
-    <span v-if="autoSave">Auto-save:  ON </span> <span v-if="!autoSave">Auto-save: OFF</span>
-      <b-form-checkbox switch v-model="autoSave">
-      </b-form-checkbox>
-    </div>
-      <span v-if="saveAfterRun">Save on each run:  ON </span> <span v-if="!saveAfterRun">Save on each run OFF</span>
-      <b-form-checkbox switch v-model="saveAfterRun">
-      </b-form-checkbox>
     </b-modal>
   </div>
   <!-- <router-view/> -->
@@ -87,17 +76,10 @@ function csvJson(csv) {
 
 export default {
   mixins: [reportCalcs],
-  timers: {
-    save: { autostart: false, repeat: true, time: 60000 }
-  },
+  
   data() {
     return {
       loadModalData: [],
-      // compList: this.competitors
-      autoSave: false,
-      saveAfterRun: false,
-      autoSaveTimer: 60000
-      // switch1:false
     };
   },
   methods: {
@@ -179,18 +161,17 @@ export default {
     },
     //creates a new save instance in the localstorage
     saveToLocal() {
-      var competitors = this.$store.state.competitors;
       var newData;
       if (localStorage.getItem("competitorData")) {
         var data = JSON.parse(localStorage.getItem("competitorData"));
         localStorage.removeItem("competitorData");
         // console.log(data);
-        if (data.length > 100) {
+        if (data.length > 30) {
           data.shift();
         }
         data.push({
           date: this.dayAndTime(new Date()),
-          competitors: competitors,
+          competitors: this.competitors,
           runCount: this.runCount,
           gates: this.gates
         });
@@ -201,7 +182,7 @@ export default {
           JSON.stringify([
             {
               date: this.dayAndTime(new Date()),
-              competitors: competitors,
+              competitors: this.competitors,
               runCount: this.runCount,
               gates: this.gates
             }
@@ -380,19 +361,8 @@ export default {
     }
   },
   watch: {
-    autoSave: function() {
-      if(this.autoSave == true) {
-        this.timers.save.time = this.autoSaveTimer
-        this.$timer.start('save')
-      }
-      else {
-        this.$timer.stop('save')
-      }
-    },
     liveRun: function() {
-      if(this.saveAfterRun == true) {
-        this.saveToLocal()
-      }
+      this.saveToLocal()
     }
   }
 };

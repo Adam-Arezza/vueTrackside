@@ -22,19 +22,19 @@ export default {
       return this.$store.state.liveRun;
     },
     modRun() {
-      return this.$store.state.modRun
+      return this.$store.state.modRun;
     }
   },
   watch: {
     liveRuns: {
       handler: function() {
         if (this.modRun != undefined) {
-          var runToModify = this.modRun
-          console.log("the run to modify is: ")
-          console.log(runToModify)
+          var runToModify = this.modRun;
+          console.log("the run to modify is: ");
+          console.log(runToModify);
           axios
             .put(
-              "http://192.168.0.17:3000/runs/" +
+              "http://localhost:3000/runs/" +
                 runToModify.Car +
                 "/" +
                 runToModify.runNum,
@@ -46,20 +46,19 @@ export default {
             .catch(err => {
               console.log(err);
             });
-            this.$store.state.modRun = undefined
-
-        } else{
+          this.$store.state.modRun = undefined;
+        } else {
           axios
-          .post(
-            "http://192.168.0.17:3000/runs",
-            this.liveRuns[this.liveRuns.length - 1]
-          )
-          .then(response => {
-            console.log(response);
-          })
-          .catch(err => {
-            console.log(err);
-          });
+            .post(
+              "http://localhost:3000/runs",
+              this.liveRuns[this.liveRuns.length - 1]
+            )
+            .then(response => {
+              console.log(response);
+            })
+            .catch(err => {
+              console.log(err);
+            });
         }
       },
       deep: true

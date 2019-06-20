@@ -12,7 +12,8 @@ export default new Vuex.Store({
     staged: [],
     gates: {},
     runCount: 1,
-    classList: ClassPax
+    classList: ClassPax,
+    eventNumber: undefined
   },
   mutations: {
     importList(state, list){

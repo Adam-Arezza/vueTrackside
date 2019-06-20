@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Main from './views/Main.vue'
 import Competitors from './views/Competitors.vue'
-import Gates from './views/Gates.vue'
+// import Gates from './views/Gates.vue'
 import Reports from "./views/reports.vue"
 
 
@@ -22,11 +22,11 @@ export default new Router({
       name: 'competitors',
       component: Competitors
     },
-    {
-      path: '/gates',
-      name: 'gates',
-      component: Gates
-    },
+    // {
+    //   path: '/gates',
+    //   name: 'gates',
+    //   component: Gates
+    // },
     {
       path: '/reports',
       name: 'reports',
